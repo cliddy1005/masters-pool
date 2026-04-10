@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PGA Championship 2026 · Ama-Ting Tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tournament.css">
+<style>
+  :root {
+    --green-deep: #1a1a3a;
+    --green-mid:  #2a2a5a;
+    --green-light:#3a3a7a;
+    --gold: #d4af37;
+    --gold-light: #e8cc6a;
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="back-link"><a href="../">← Ama-Ting Tour</a></div>
+
+  <header>
+    <div class="header-badge">Aronimink Golf Club · Newtown Square, PA</div>
+    <h1>PGA <span>Championship</span></h1>
+    <div class="header-sub">Ama-Ting Tour · May 11–17, 2026</div>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-live">
+      <div class="pulse-dot" id="live-dot"></div>
+      <span id="tournament-status">Loading…</span>
+    </div>
+    <div class="status-right">
+      <span class="status-item"><strong id="round-info">—</strong> in play</span>
+      <span id="last-updated"></span>
+    </div>
+  </div>
+
+  <div id="banner" class="banner"></div>
+
+  <div class="controls">
+    <button class="btn btn-primary" id="refresh-btn" onclick="fetchAndRender()">↻ Refresh</button>
+    <button class="btn btn-ghost" disabled style="opacity:0.3;cursor:not-allowed;">✎ Edit Picks</button>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+
+  <div class="section-label">Pool Standings</div>
+  <div class="pool-table-scroll" id="pool-table">
+    <div class="skeleton-row" style="min-width:620px"></div>
+    <div class="skeleton-row" style="min-width:620px"></div>
+    <div class="skeleton-row" style="min-width:620px"></div>
+    <div class="skeleton-row" style="min-width:620px"></div>
+    <div class="skeleton-row" style="min-width:620px"></div>
+  </div>
+
+  <div class="leaderboard-section">
+    <div class="section-label">Tournament Leaderboard</div>
+    <div class="golf-table" id="golf-table">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>PGA Championship 2026 · Aronimink Golf Club · Auto-refreshes every 5 min · For entertainment only</footer>
+
+<script src="../shared.js"></script>
+<script src="../tournament.js"></script>
+<script>
+initTournament({
+  tournamentId: 'pga',
+  feedUrl: 'https://site.api.espn.com/apis/site/v2/sports/golf/pga/leaderboard?tournamentId=401811947',
+  feedType: 'espn',
+  storageKey: 'amt_pga_2026',
+  statusFn: function(data) {
+    const event = data?.events?.[0];
+    if (!event) return { label: 'PGA Championship', roundLabel: '—', isLive: false };
+    const status = event.status?.type?.description || '';
+    const round  = event.competitions?.[0]?.status?.period || '?';
+    const count  = event.competitions?.[0]?.competitors?.length || 0;
+    const isLive = status.toLowerCase().includes('progress');
+    return {
+      label: isLive ? 'Live — PGA Championship' : 'PGA Championship',
+      roundLabel: `Round ${round} · ${count} players`,
+      isLive,
+    };
+  },
+});
+</script>
+</body>
+</html>
