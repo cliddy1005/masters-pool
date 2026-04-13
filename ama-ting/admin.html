@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Ama-Ting Tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="sidebar">
+    <div class="sidebar-logo"><div class="logo-eyebrow">The Golf Pool</div><h2>Ama-<em>Ting</em></h2></div>
+    <div class="sidebar-user sidebar-user-fill"></div>
+    <div class="sidebar-nav sidebar-nav-fill"></div>
+    <div class="sidebar-footer"><div class="sign-out-btn sign-out">Sign out</div></div>
+  </nav>
+  <div class="main">
+    <div class="page-header">
+      <div><h1>Commissioner</h1><div class="header-sub">Manage picks, users, and pool settings</div></div>
+      <div class="header-actions"><span class="tag gold">⚙️ Admin Only</span></div>
+    </div>
+    <div class="page-body">
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('picks',this)">Picks</button>
+        <button class="tab-btn" onclick="switchTab('users',this)">Users</button>
+        <button class="tab-btn" onclick="switchTab('settings',this)">Settings</button>
+        <button class="tab-btn" onclick="switchTab('codes',this)">Invite Codes</button>
+      </div>
+
+      <!-- PICKS TAB -->
+      <div id="tab-picks" class="tab-content active">
+        <div class="card mb-4">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Pool Picks</div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:2px">Picks lock when a tournament starts</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <select class="form-select" style="width:180px" id="picks-tournament" onchange="renderPicksTable()">
+                <option value="masters">The Masters</option>
+                <option value="pga">PGA Championship</option>
+                <option value="usopen">US Open</option>
+                <option value="theopen">The Open</option>
+              </select>
+              <button class="btn btn-green btn-sm" onclick="savePicks()">Save Picks</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="admin-table" id="picks-table">
+              <thead><tr><th>Participant</th><th>Pick 1</th><th>Pick 2</th><th>Pick 3</th><th>Pick 4</th><th>Status</th></tr></thead>
+              <tbody id="picks-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="picks-saved-msg" style="display:none" class="tag green" style="padding:10px">✓ Picks saved</div>
+      </div>
+
+      <!-- USERS TAB -->
+      <div id="tab-users" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Pool Members</div>
+            <span class="tag">${POOL_PICKS.length} members</span>
+          </div>
+          <table class="admin-table">
+            <thead><tr><th>Member</th><th>Username</th><th>Pool ID</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="users-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SETTINGS TAB -->
+      <div id="tab-settings" class="tab-content">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Pool Rules</div></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>Pool Name</label>
+                <input class="form-input" id="s-pool-name" value="Ama-Ting Tour 2026">
+              </div>
+              <div class="form-group">
+                <label>Missed Cut Penalty (strokes)</label>
+                <input class="form-input" id="s-penalty" type="number" value="20" min="0" max="50">
+              </div>
+              <div class="form-group">
+                <label>Picks Per Person</label>
+                <input class="form-input" id="s-picks" type="number" value="4" min="1" max="8">
+              </div>
+              <div class="form-group">
+                <label>Season Year</label>
+                <input class="form-input" id="s-year" value="2026">
+              </div>
+              <button class="btn btn-green btn-full" onclick="saveSettings()">Save Settings</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Features</div></div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:16px">
+                ${[
+                  ['Allow round logging','Participants can log personal golf rounds','rounds-on',true],
+                  ['Public profiles','Profiles visible to all members','profiles-on',true],
+                  ['Activity feed','Show score events in activity feed','feed-on',true],
+                  ['Head-to-head','Enable H2H comparisons','h2h-on',true],
+                ].map(([label,desc,id,def])=>`
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+                    <div>
+                      <div style="font-size:14px;font-weight:600">${label}</div>
+                      <div style="font-size:12px;color:var(--text-3)">${desc}</div>
+                    </div>
+                    <label style="display:flex;align-items:center;cursor:pointer;gap:6px">
+                      <input type="checkbox" id="${id}" ${def?'checked':''} style="width:16px;height:16px;accent-color:var(--green-700)">
+                      <span style="font-size:12px;color:var(--text-3)">On</span>
+                    </label>
+                  </div>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card mt-4">
+          <div class="card-header"><div class="card-title">Danger Zone</div></div>
+          <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="if(confirm('Clear all cached pool results?')){['masters','pga','usopen','theopen'].forEach(t=>localStorage.removeItem('amt_v2_pool_'+t));alert('Pool results cleared.');}">Clear pool cache</button>
+            <button class="btn btn-ghost btn-sm" onclick="if(confirm('Reset all rounds for all users? This cannot be undone.')){localStorage.removeItem('amt_v2_rounds');localStorage.removeItem('amt_v2_rounds_seeded');alert('Rounds cleared.');}">Reset rounds</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVITE CODES TAB -->
+      <div id="tab-codes" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Invite Codes</div>
+            <button class="btn btn-primary btn-sm" onclick="generateCode()">+ Generate Code</button>
+          </div>
+          <div class="card-body">
+            <div style="background:var(--green-100);border:1px solid rgba(26,92,53,0.2);border-radius:var(--radius-md);padding:14px;margin-bottom:16px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:6px">Current Season Code</div>
+              <div style="font-family:var(--font-mono);font-size:24px;font-weight:700;letter-spacing:6px;color:var(--green-800)">AMAT26</div>
+              <div style="font-size:12px;color:var(--text-3);margin-top:4px">Share this with new members to grant access</div>
+            </div>
+            <table class="admin-table" style="width:100%">
+              <thead><tr><th>Code</th><th>Created</th><th>Status</th><th>Used By</th><th>Actions</th></tr></thead>
+              <tbody id="codes-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<nav class="mobile-nav"><div class="mobile-nav-items mobile-nav-fill"></div></nav>
+
+<script src="app.js"></script>
+<script>
+const user = requireAuth();
+renderNav('admin');
+
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+// Editable picks data (start with defaults from app.js)
+let editablePicks = JSON.parse(JSON.stringify(POOL_PICKS.map(p=>({...p}))));
+
+function renderPicksTable() {
+  const tid = document.getElementById('picks-tournament').value;
+  const t   = TOURNAMENTS.find(t=>t.id===tid);
+  const isLocked = getTournamentStatus(t)==='live'||getTournamentStatus(t)==='complete';
+
+  document.getElementById('picks-tbody').innerHTML = editablePicks.map((p,pi)=>`
+    <tr>
+      <td style="font-family:'Playfair Display',serif;font-weight:700">${p.name}</td>
+      ${[0,1,2,3].map(gi=>`<td>
+        <input class="pick-input" ${isLocked?'disabled':''} value="${p.picks[gi]||''}"
+          onchange="editablePicks[${pi}].picks[${gi}]=this.value"
+          list="golfer-list" style="width:150px;padding:5px 8px;border:1px solid var(--border-dark);border-radius:6px;font-size:12px;${isLocked?'opacity:0.5;background:var(--cream)':''}">
+      </td>`).join('')}
+      <td><span class="tag ${isLocked?'red':'green'}">${isLocked?'🔒 Locked':'✓ Open'}</span></td>
+    </tr>`).join('');
+
+  // Golfer suggestions datalist
+  const existing = document.getElementById('golfer-list');
+  if(existing) existing.remove();
+  const dl = document.createElement('datalist');
+  dl.id = 'golfer-list';
+  ['Rory McIlroy','Scottie Scheffler','Xander Schauffele','Bryson DeChambeau','Jon Rahm','Ludvig Åberg','Collin Morikawa','Patrick Cantlay','Cameron Young','Tommy Fleetwood','Justin Thomas','Justin Rose','Cameron Smith','Brooks Koepka','Matt Fitzpatrick','Dustin Johnson','Shane Lowry','Viktor Hovland','Max Homa','Jordan Spieth','Tony Finau','Hideki Matsuyama'].forEach(n=>{const o=document.createElement('option');o.value=n;dl.appendChild(o);});
+  document.body.appendChild(dl);
+}
+
+function savePicks() {
+  // In a real app this would POST to server; here we update the local array
+  const msg = document.getElementById('picks-saved-msg');
+  msg.style.display='inline-flex';
+  setTimeout(()=>msg.style.display='none', 2500);
+}
+
+function saveSettings() {
+  alert('Settings saved ✓');
+}
+
+// Users table
+document.getElementById('users-tbody').innerHTML = POOL_PICKS.map(p=>`
+  <tr>
+    <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar-sm">${p.initials}</div>${p.name}</div></td>
+    <td class="mono">${p.id}</td>
+    <td>${p.id}</td>
+    <td><span class="tag green">Active</span></td>
+    <td><button class="btn btn-ghost btn-sm" onclick="alert('Resent invite to ${p.name}')">Resend invite</button></td>
+  </tr>`).join('');
+
+// Invite codes
+const storedCodes = JSON.parse(localStorage.getItem('amt_v2_invite_codes')||'[{"code":"AMAT26","created":"2025-12-01","used":true,"usedBy":"All members"}]');
+function renderCodes() {
+  document.getElementById('codes-tbody').innerHTML = storedCodes.map((c,i)=>`
+    <tr>
+      <td class="mono" style="font-weight:700;letter-spacing:2px">${c.code}</td>
+      <td style="color:var(--text-3)">${fmtDate(c.created)}</td>
+      <td><span class="tag ${c.used?'red':'green'}">${c.used?'Used':'Available'}</span></td>
+      <td style="color:var(--text-3)">${c.usedBy||'—'}</td>
+      <td>${!c.used?`<button class="btn btn-ghost btn-sm" onclick="expireCode(${i})">Expire</button>`:'—'}</td>
+    </tr>`).join('');
+}
+
+function generateCode() {
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const code = Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  storedCodes.push({code,created:new Date().toISOString().slice(0,10),used:false,usedBy:null});
+  localStorage.setItem('amt_v2_invite_codes',JSON.stringify(storedCodes));
+  renderCodes();
+}
+
+function expireCode(i) {
+  storedCodes[i].used=true; storedCodes[i].usedBy='Expired';
+  localStorage.setItem('amt_v2_invite_codes',JSON.stringify(storedCodes));
+  renderCodes();
+}
+
+renderPicksTable();
+renderCodes();
+</script>
+</body>
+</html>

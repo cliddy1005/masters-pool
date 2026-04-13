@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ama-Ting Tour — Sign In</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--green-800:#1a3a2a;--green-700:#2d5a40;--gold:#c9a84c;--gold-light:#e8c97a;--cream:#f5f0e8;--cream-dark:#ede6d6;--white:#fdfaf5;--text-1:#1a1a1a;--text-2:#3a3a3a;--text-3:#7a7a6a;--border:#e8e3d8;--border-dark:#d0cabc;--radius-md:10px;--radius-lg:14px;--shadow-xl:0 16px 48px rgba(0,0,0,0.22)}
+body{font-family:'Source Sans 3',sans-serif;background:var(--green-800);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(201,168,76,0.08) 0%,transparent 55%),radial-gradient(ellipse at 80% 80%,rgba(45,90,64,0.4) 0%,transparent 55%);pointer-events:none}
+.auth-card{background:var(--white);border-radius:20px;box-shadow:var(--shadow-xl);width:100%;max-width:440px;padding:40px;position:relative;z-index:1}
+.auth-logo{text-align:center;margin-bottom:28px}
+.auth-logo .eyebrow{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:6px}
+.auth-logo h1{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:var(--text-1);line-height:1}
+.auth-logo h1 em{font-style:italic;color:var(--gold)}
+.auth-logo .season{font-size:11px;color:var(--text-3);margin-top:4px;letter-spacing:2px;text-transform:uppercase}
+.form-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--text-1);margin-bottom:6px}
+.form-sub{font-size:13px;color:var(--text-3);margin-bottom:24px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
+.form-input{width:100%;padding:10px 14px;border:1px solid var(--border-dark);border-radius:var(--radius-md);font-size:14px;color:var(--text-1);background:var(--white);outline:none;transition:border .15s,box-shadow .15s;font-family:'Source Sans 3',sans-serif}
+.form-input:focus{border-color:var(--green-700);box-shadow:0 0 0 3px rgba(45,90,64,0.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{width:100%;padding:12px;border:none;border-radius:var(--radius-md);font-size:14px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:4px;font-family:'Source Sans 3',sans-serif}
+.btn-primary{background:var(--gold);color:var(--green-800)}
+.btn-primary:hover{background:var(--gold-light)}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.divider span{font-size:12px;color:var(--text-3)}
+.switch-link{text-align:center;font-size:13px;color:var(--text-3);margin-top:18px}
+.switch-link a{color:var(--green-700);font-weight:700;cursor:pointer;text-decoration:underline}
+.invite-hint{font-size:11px;color:var(--text-3);margin-top:4px}
+.error-msg{background:#fff0ee;border:1px solid #f5c6c0;color:var(--green-800);color:#c0392b;border-radius:var(--radius-md);padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
+.error-msg.show{display:block}
+.success-indicator{font-size:11px;margin-top:4px}
+.success-indicator.ok{color:var(--green-700)}
+.success-indicator.bad{color:#c0392b}
+</style>
+</head>
+<body>
+<div class="auth-card">
+  <div class="auth-logo">
+    <div class="eyebrow">The Golf Pool</div>
+    <h1>Ama-<em>Ting</em> Tour</h1>
+    <div class="season">Season 2026</div>
+  </div>
+
+  <!-- LOGIN FORM -->
+  <div id="login-form">
+    <div class="form-title">Welcome back</div>
+    <div class="form-sub">Sign in to your pool account</div>
+    <div class="error-msg" id="login-error">Incorrect username or password.</div>
+    <div class="form-group">
+      <label>Username</label>
+      <input class="form-input" id="login-username" placeholder="your username" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input class="form-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">Sign in →</button>
+    <div class="switch-link">New to the tour? <a onclick="showSignup()">Create account</a></div>
+  </div>
+
+  <!-- SIGNUP FORM -->
+  <div id="signup-form" style="display:none">
+    <div class="form-title">Join the Tour</div>
+    <div class="form-sub">You'll need an invite code from your commissioner</div>
+    <div class="error-msg" id="signup-error"></div>
+    <div class="form-group">
+      <label>Invite Code</label>
+      <input class="form-input" id="signup-code" placeholder="e.g. AMAT26" style="text-transform:uppercase;letter-spacing:3px;font-weight:700">
+      <div class="invite-hint">Ask Ciaran if you don't have one</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>First Name</label>
+        <input class="form-input" id="signup-first" placeholder="Rory">
+      </div>
+      <div class="form-group">
+        <label>Last Name</label>
+        <input class="form-input" id="signup-last" placeholder="McIlroy">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Username</label>
+      <input class="form-input" id="signup-username" placeholder="rorymac" oninput="checkUsername(this.value)">
+      <div class="success-indicator" id="username-check"></div>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input class="form-input" type="password" id="signup-password" placeholder="min 6 characters">
+    </div>
+    <div class="form-group">
+      <label>Home Club / Course (optional)</label>
+      <input class="form-input" id="signup-club" placeholder="e.g. Caversham Heath">
+    </div>
+    <button class="btn btn-primary" onclick="doSignup()">Join the Ama-Ting Tour →</button>
+    <div class="switch-link">Already a member? <a onclick="showLogin()">Sign in</a></div>
+  </div>
+</div>
+
+<script>
+// Pool member username/password list (demo — in real app this would be server-side)
+const POOL_USERS = [
+  { username:'ciaran', password:'amat26', displayName:'Ciaran',  poolId:'ciaran',  homeClub:'Caversham Heath' },
+  { username:'storm',  password:'amat26', displayName:'Storm',   poolId:'storm',   homeClub:'' },
+  { username:'rick',   password:'amat26', displayName:'Rick',    poolId:'rick',    homeClub:'' },
+  { username:'bryan',  password:'amat26', displayName:'Bryan',   poolId:'bryan',   homeClub:'' },
+  { username:'jarryd', password:'amat26', displayName:'Jarryd',  poolId:'jarryd',  homeClub:'' },
+  { username:'rhys',   password:'amat26', displayName:'Rhys',    poolId:'rhys',    homeClub:'' },
+  { username:'ddog',   password:'amat26', displayName:'D.Dog',   poolId:'ddog',    homeClub:'' },
+  { username:'mp',     password:'amat26', displayName:'MP',      poolId:'mp',      homeClub:'' },
+  { username:'mattf',  password:'amat26', displayName:'Matt F',  poolId:'mattf',   homeClub:'' },
+  { username:'rayne',  password:'amat26', displayName:'Rayne',   poolId:'rayne',   homeClub:'' },
+];
+
+function showLogin()  { document.getElementById('login-form').style.display='block'; document.getElementById('signup-form').style.display='none'; }
+function showSignup() { document.getElementById('login-form').style.display='none'; document.getElementById('signup-form').style.display='block'; }
+
+function doLogin() {
+  const u = document.getElementById('login-username').value.trim().toLowerCase();
+  const p = document.getElementById('login-password').value;
+  const err = document.getElementById('login-error');
+  const user = POOL_USERS.find(x=>x.username===u && x.password===p);
+  if(!user) { err.classList.add('show'); return; }
+  err.classList.remove('show');
+  localStorage.setItem('amt_v2_user', JSON.stringify({
+    username: user.username, displayName: user.displayName,
+    poolId: user.poolId, homeClub: user.homeClub,
+    joinDate: new Date().toISOString(),
+  }));
+  // Seed sample rounds for new session
+  if(!localStorage.getItem('amt_v2_rounds_seeded')) {
+    const sample = [
+      {id:'s1',course:'Caversham Heath',date:'2026-03-15',grossScore:81,vspar:9,totalPutts:33,gir:6,fir:8,notes:'Tough conditions',created:new Date('2026-03-15').toISOString(),holes:Array.from({length:18},(_,i)=>({hole:i+1,par:[4,5,4,3,4,3,4,5,4,4,4,3,5,4,5,3,4,4][i],score:[5,5,4,3,5,3,4,6,5,5,5,3,5,4,5,4,4,4][i],putts:[2,2,1,2,2,2,2,2,2,2,2,1,2,2,2,2,1,2][i],fir:i<14?[1,1,0,null,1,null,0,1,1,1,0,null,1,0,1,null,0,1][i]:null,gir:[0,1,1,0,0,1,1,0,0,0,0,1,1,1,0,0,1,0][i],penalties:[0,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0][i]}))},
+      {id:'s2',course:'Temple Golf Club',date:'2026-02-28',grossScore:78,vspar:6,totalPutts:31,gir:8,fir:9,notes:'Best round this year',created:new Date('2026-02-28').toISOString(),holes:Array.from({length:18},(_,i)=>({hole:i+1,par:[4,5,4,3,4,3,4,5,4,4,4,3,5,4,5,3,4,4][i],score:[4,5,4,3,4,3,5,5,5,4,4,3,5,4,5,3,4,5][i],putts:[1,2,1,2,1,1,2,2,2,1,2,1,2,2,2,1,1,2][i],fir:i<14?[1,1,1,null,1,null,1,1,0,1,1,null,1,1,0,null,1,0][i]:null,gir:[1,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,0][i],penalties:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0][i]}))},
+      {id:'s3',course:'Caversham Heath',date:'2026-01-20',grossScore:85,vspar:13,totalPutts:36,gir:4,fir:6,notes:'January rust',created:new Date('2026-01-20').toISOString(),holes:Array.from({length:18},(_,i)=>({hole:i+1,par:[4,5,4,3,4,3,4,5,4,4,4,3,5,4,5,3,4,4][i],score:[5,6,5,4,5,4,5,6,5,5,5,4,5,5,6,3,5,5][i],putts:[2,3,2,2,2,2,2,2,2,2,2,2,2,2,3,1,2,3][i],fir:i<14?[1,0,0,null,1,null,1,0,1,0,0,null,1,1,0,null,0,1][i]:null,gir:[0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,1,0,0][i],penalties:[0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0][i]}))},
+    ];
+    localStorage.setItem('amt_v2_rounds', JSON.stringify(sample));
+    localStorage.setItem('amt_v2_rounds_seeded', 'true');
+  }
+  window.location.href = 'dashboard.html';
+}
+
+function checkUsername(val) {
+  const el = document.getElementById('username-check');
+  if(val.length<3){el.textContent='';return;}
+  const taken = POOL_USERS.map(u=>u.username);
+  if(taken.includes(val.toLowerCase())){
+    el.textContent='✗ Username taken';el.className='success-indicator bad';
+  } else {
+    el.textContent='✓ Available';el.className='success-indicator ok';
+  }
+}
+
+function doSignup() {
+  const code  = document.getElementById('signup-code').value.toUpperCase().trim();
+  const first = document.getElementById('signup-first').value.trim();
+  const last  = document.getElementById('signup-last').value.trim();
+  const uname = document.getElementById('signup-username').value.trim().toLowerCase();
+  const pass  = document.getElementById('signup-password').value;
+  const club  = document.getElementById('signup-club').value.trim();
+  const err   = document.getElementById('signup-error');
+
+  if(code !== 'AMAT26'){err.textContent='Invalid invite code.';err.classList.add('show');return;}
+  if(!first||!last)    {err.textContent='Please enter your name.';err.classList.add('show');return;}
+  if(uname.length<3)   {err.textContent='Username must be at least 3 characters.';err.classList.add('show');return;}
+  if(pass.length<6)    {err.textContent='Password must be at least 6 characters.';err.classList.add('show');return;}
+  err.classList.remove('show');
+
+  const user = {
+    username: uname, displayName: first+' '+last,
+    poolId: null, homeClub: club,
+    joinDate: new Date().toISOString(),
+  };
+  localStorage.setItem('amt_v2_user', JSON.stringify(user));
+  window.location.href = 'dashboard.html';
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if(e.key==='Enter') {
+    if(document.getElementById('login-form').style.display!=='none') doLogin();
+    else doSignup();
+  }
+});
+</script>
+</body>
+</html>

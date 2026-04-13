@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard · Ama-Ting Tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-eyebrow">The Golf Pool</div>
+      <h2>Ama-<em>Ting</em></h2>
+    </div>
+    <div class="sidebar-user sidebar-user-fill"></div>
+    <div class="sidebar-nav sidebar-nav-fill"></div>
+    <div class="sidebar-footer">
+      <div class="sign-out-btn sign-out">Sign out</div>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <h1 id="greeting">Good evening</h1>
+        <div class="header-sub" id="header-sub">Season 2026 · 4 majors</div>
+      </div>
+      <div class="header-actions">
+        <div class="tournament-pill" id="tourney-pill">
+          <div class="live-dot pulse-dot"></div>
+          <span id="pill-text">Loading…</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- HERO STRIP -->
+      <div id="hero-strip" style="background:var(--green-800);border-radius:16px;padding:24px;margin-bottom:24px;color:var(--cream)">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+          <div>
+            <div style="font-size:10px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,0.6);margin-bottom:4px" id="hero-tournament">The Masters · Augusta National</div>
+            <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;line-height:1" id="hero-pos">Loading pool…</div>
+            <div style="font-size:13px;color:rgba(245,240,232,0.55);margin-top:4px" id="hero-detail">Fetching live scores</div>
+          </div>
+          <div id="hero-chips" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+        </div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stat-cards" id="stat-cards">
+        <div class="stat-card">
+          <div class="sc-label">Scoring Avg</div>
+          <div class="sc-value" id="sc-avg">—</div>
+          <div class="sc-delta" id="sc-avg-sub">from <span id="sc-rounds">0</span> rounds</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Best Round</div>
+          <div class="sc-value green" id="sc-best">—</div>
+          <div class="sc-delta" id="sc-best-course">log a round to track</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Pool Wins</div>
+          <div class="sc-value gold" id="sc-wins">0 🏆</div>
+          <div class="sc-delta">season 2026</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-label">Rumblers</div>
+          <div class="sc-value" id="sc-rumblers">0 🫠</div>
+          <div class="sc-delta">keeping it clean</div>
+        </div>
+      </div>
+
+      <!-- MAIN GRID -->
+      <div class="grid-70-30">
+
+        <!-- LEFT: Pool + Activity -->
+        <div class="stack">
+
+          <!-- Pool mini leaderboard -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Pool Standings</div>
+              <a href="pool.html" class="btn btn-sm btn-ghost">Full leaderboard →</a>
+            </div>
+            <div class="card-body" style="padding:0">
+              <div id="mini-leaderboard"><div class="empty-state">Loading…</div></div>
+            </div>
+          </div>
+
+          <!-- Activity feed -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Activity</div>
+              <span class="tag green">Live</span>
+            </div>
+            <div class="card-body" style="padding-top:0;padding-bottom:0" id="activity-feed"></div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: Tournament cards + Next up -->
+        <div class="stack">
+
+          <!-- Countdown card -->
+          <div class="card" id="countdown-card">
+            <div class="card-body" style="text-align:center">
+              <div class="section-eyebrow">Next Major</div>
+              <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin:8px 0 4px" id="next-major-name">—</div>
+              <div style="font-size:12px;color:var(--text-3);margin-bottom:16px" id="next-major-course">—</div>
+              <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap" id="main-countdown"></div>
+              <div style="margin-top:16px">
+                <a href="pool.html" class="btn btn-green btn-sm">View picks →</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rivals card -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Rival Watch</div>
+            </div>
+            <div class="card-body" id="rival-watch">
+              <div class="empty-state" style="padding:20px">Loading…</div>
+            </div>
+          </div>
+
+          <!-- Quick actions -->
+          <div class="card">
+            <div class="card-header"><div class="card-title">Quick Actions</div></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+              <a href="rounds.html#new" class="btn btn-green">⛳ Log a round</a>
+              <a href="pool.html#h2h" class="btn btn-ghost">⚔️ Head-to-head</a>
+              <a href="stats.html" class="btn btn-ghost">📊 My stats</a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<nav class="mobile-nav">
+  <div class="mobile-nav-items mobile-nav-fill"></div>
+</nav>
+
+<script src="app.js"></script>
+<script>
+const user = requireAuth();
+renderNav('dashboard');
+
+// Set greeting
+const h = new Date().getHours();
+document.getElementById('greeting').textContent =
+  (h<12?'Good morning, ':h<18?'Good afternoon, ':'Good evening, ')+(user.displayName||'');
+
+// Load stats
+const stats = getStats();
+if(stats) {
+  document.getElementById('sc-avg').textContent = stats.avg;
+  document.getElementById('sc-best').textContent = stats.best;
+  document.getElementById('sc-rounds').textContent = stats.rounds;
+  document.getElementById('sc-best-course').textContent = 'personal best';
+}
+
+// Pool wins/rumblers from mock
+const myMasters = MOCK_MASTERS_POOL.find(r=>r.id===(user.poolId||'ciaran'));
+if(myMasters) {
+  if(myMasters.pos===1) document.getElementById('sc-wins').textContent = '1 🏆';
+  if(myMasters.pos===MOCK_MASTERS_POOL.length) document.getElementById('sc-rumblers').textContent = '1 🫠';
+}
+
+// Tournament status
+const at = getActiveTournament();
+const status = getTournamentStatus(at);
+const pill = document.getElementById('tourney-pill');
+const pillDot = pill.querySelector('.live-dot');
+if(status==='live') { pill.style.background='rgba(76,175,80,0.1)'; pill.style.borderColor='rgba(76,175,80,0.3)'; pillDot.style.background='#4caf50'; }
+else { pillDot.style.background='var(--gold)'; pillDot.classList.remove('pulse-dot'); }
+document.getElementById('pill-text').textContent = status==='live' ? 'Live · '+at.name : at.name+' · '+at.dates;
+
+// Countdown card
+const nextUpcoming = TOURNAMENTS.find(t=>getTournamentStatus(t)==='upcoming');
+if(nextUpcoming) {
+  document.getElementById('next-major-name').textContent = nextUpcoming.name;
+  document.getElementById('next-major-course').textContent = nextUpcoming.course+' · '+nextUpcoming.location;
+} else if(status==='live') {
+  document.getElementById('next-major-name').textContent = at.name;
+  document.getElementById('next-major-course').textContent = 'In progress';
+  document.getElementById('main-countdown').innerHTML = '<span class="tag green">Live now</span>';
+}
+
+// Mini leaderboard from mock data
+const myId = user.poolId || 'ciaran';
+const sorted = [...MOCK_MASTERS_POOL].sort((a,b)=>a.total-b.total);
+const worstScore = sorted[sorted.length-1].total;
+const mini = document.getElementById('mini-leaderboard');
+mini.innerHTML = sorted.map((r,i) => {
+  const isMe = r.id === myId;
+  const isLast = r.total === worstScore;
+  return `<div class="mini-lb-row${isMe?' highlight':''}">
+    <div class="mini-lb-pos">${i+1}</div>
+    <div class="mini-lb-name">${r.participant}${isMe?' <span class="tag green" style="font-size:9px">you</span>':''} ${isLast?'🫠':''}</div>
+    <div class="mini-lb-score ${scoreClass(r.total)}">${fmtScore(r.total)}</div>
+  </div>`;
+}).join('');
+
+// Hero strip — try live fetch, fall back to mock
+async function loadHero() {
+  const myPick = POOL_PICKS.find(p=>p.id===myId);
+  document.getElementById('hero-tournament').textContent = at.name+' · '+at.course;
+  const myPool = MOCK_MASTERS_POOL.find(r=>r.id===myId);
+  if(myPool) {
+    document.getElementById('hero-pos').innerHTML =
+      `<span style="color:rgba(201,168,76,0.8)">${myPool.pos}${['st','nd','rd'][myPool.pos-1]||'th'}</span> place`;
+    document.getElementById('hero-detail').textContent =
+      `Pool total: ${fmtScore(myPool.total)} · ${at.name}`;
+    document.getElementById('hero-chips').innerHTML = myPool.golfers.map(g=>{
+      const isCut = g.status==='CUT'||g.status==='WD';
+      return `<div class="chip${isCut?' cut':''}">
+        <div class="chip-name">${g.name.split(' ').slice(-1)[0]}</div>
+        <div class="chip-score ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div>
+        <div class="chip-thru">${isCut?'CUT':''}</div>
+      </div>`;
+    }).join('');
+  }
+  // Try live data too
+  if(getTournamentStatus(at)==='live') {
+    try {
+      const field = await fetchField(at);
+      const pool  = calcPool(POOL_PICKS, field);
+      savePoolResult(at.id, pool);
+      const me = pool.find(p=>p.id===myId);
+      if(me) {
+        document.getElementById('hero-pos').innerHTML =
+          `<span style="color:rgba(201,168,76,0.8)">${me.pos}${['st','nd','rd'][me.pos-1]||'th'}</span> place`;
+        document.getElementById('hero-detail').textContent = `Pool total: ${fmtScore(me.total)} · Live`;
+        document.getElementById('hero-chips').innerHTML = me.golfers.map(g=>{
+          const isCut=g.status==='CUT'||g.status==='WD';
+          const thru=g.thru==='F'?'F':g.thru==='-'||!g.thru?'':('H'+g.thru);
+          return `<div class="chip${isCut?' cut':''}">
+            <div class="chip-name">${g.name.split(' ').slice(-1)[0]}</div>
+            <div class="chip-score ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div>
+            <div class="chip-thru">${isCut?'CUT':thru}</div>
+          </div>`;
+        }).join('');
+        // Update mini lb
+        mini.innerHTML = pool.map((r,i)=>{
+          const isMe2=r.id===myId;
+          const worst=pool[pool.length-1].total;
+          const isLast2=r.total===worst;
+          return `<div class="mini-lb-row${isMe2?' highlight':''}">
+            <div class="mini-lb-pos">${i+1}</div>
+            <div class="mini-lb-name">${r.participant}${isMe2?' <span class="tag green" style="font-size:9px">you</span>':''} ${isLast2?'🫠':''}</div>
+            <div class="mini-lb-score ${scoreClass(r.total)}">${fmtScore(r.total)}</div>
+          </div>`;
+        }).join('');
+      }
+    } catch(e) { console.log('Live fetch failed, using mock'); }
+  }
+}
+loadHero();
+
+// Rival watch
+const me2 = MOCK_MASTERS_POOL.find(r=>r.id===myId);
+const rivalWrap = document.getElementById('rival-watch');
+if(me2) {
+  const above = MOCK_MASTERS_POOL.find(r=>r.pos===me2.pos-1);
+  const below  = MOCK_MASTERS_POOL.find(r=>r.pos===me2.pos+1);
+  let html = '';
+  if(above) html += `<div style="margin-bottom:12px">
+    <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:4px">Ahead of you</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:'Playfair Display',serif;font-weight:700">${above.participant}</div>
+      <div style="font-family:'Playfair Display',serif;font-weight:900;color:var(--under)">${fmtScore(above.total)}</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3)">Gap: ${Math.abs(above.total-me2.total)} shots</div>
+  </div>`;
+  if(below) html += `<div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:4px">Behind you</div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:'Playfair Display',serif;font-weight:700">${below.participant}</div>
+      <div style="font-family:'Playfair Display',serif;font-weight:900;color:var(--over)">${fmtScore(below.total)}</div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3)">Gap: ${Math.abs(below.total-me2.total)} shots</div>
+  </div>`;
+  rivalWrap.innerHTML = html || '<div class="empty-state" style="padding:20px">No rivals nearby</div>';
+}
+
+// Activity feed
+const feedItems = [
+  {avatar:'DD',text:'<strong>D.Dog</strong> is in <span class="score under">1st place</span> with <span class="score under">-5</span> after R2',time:'2m ago'},
+  {avatar:'✂',text:'<span class="score over">Matt Fitzpatrick</span> missed the cut — Rick and Matt F take <span class="score over">+20</span> hit',time:'14m ago'},
+  {avatar:'ST',text:'<strong>Storm</strong> logged a round: <span class="score over">81</span> at Caversham Heath',time:'2h ago'},
+  {avatar:'RH',text:'<strong>Rhys</strong> moves up to <span class="score under">2nd</span> after Rose birdies 16',time:'3h ago'},
+  {avatar:'JA',text:'<strong>Jarryd</strong> drops to joint last 🫠',time:'4h ago'},
+];
+document.getElementById('activity-feed').innerHTML = feedItems.map(f=>`
+  <div class="feed-item">
+    <div class="feed-avatar" style="font-size:13px">${f.avatar}</div>
+    <div>
+      <div class="feed-text">${f.text}</div>
+      <div class="feed-time">${f.time}</div>
+    </div>
+  </div>`).join('');
+
+// Countdown ticks
+if(nextUpcoming) {
+  const cdEl = document.getElementById('main-countdown');
+  function tick() {
+    const c = countdown(nextUpcoming.start);
+    if(!c){cdEl.innerHTML='<span class="tag green">Live now</span>';return;}
+    cdEl.innerHTML = ['days','hrs','min','sec'].map((l,i)=>`
+      <div style="text-align:center;background:rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;min-width:50px">
+        <div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--green-800)">${[c.days,String(c.hours).padStart(2,'0'),String(c.mins).padStart(2,'0'),String(c.secs).padStart(2,'0')][i]}</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)">${l}</div>
+      </div>`).join('');
+  }
+  tick(); setInterval(tick,1000);
+}
+</script>
+</body>
+</html>

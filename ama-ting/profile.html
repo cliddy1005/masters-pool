@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profile · Ama-Ting Tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="sidebar">
+    <div class="sidebar-logo"><div class="logo-eyebrow">The Golf Pool</div><h2>Ama-<em>Ting</em></h2></div>
+    <div class="sidebar-user sidebar-user-fill"></div>
+    <div class="sidebar-nav sidebar-nav-fill"></div>
+    <div class="sidebar-footer"><div class="sign-out-btn sign-out">Sign out</div></div>
+  </nav>
+  <div class="main">
+    <div class="page-header">
+      <div><h1>Profile</h1><div class="header-sub">Your account and settings</div></div>
+      <div class="header-actions">
+        <div class="tabs" style="margin:0">
+          <button class="tab-btn active" onclick="switchProfile('me',this)">My Profile</button>
+          <button class="tab-btn" onclick="switchProfile('members',this)">Pool Members</button>
+        </div>
+      </div>
+    </div>
+    <div class="page-body">
+
+      <!-- MY PROFILE -->
+      <div id="view-me">
+        <!-- Profile header card -->
+        <div class="card mb-6">
+          <div class="card-body" style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap">
+            <div id="profile-avatar" style="width:80px;height:80px;border-radius:50%;background:var(--green-700);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--gold);flex-shrink:0"></div>
+            <div style="flex:1;min-width:200px">
+              <div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:900;margin-bottom:2px" id="profile-name">—</div>
+              <div style="font-size:14px;color:var(--text-3);margin-bottom:12px" id="profile-handle">@—</div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap">
+                <div><div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)">Home Club</div><div style="font-size:14px;font-weight:600" id="profile-club">—</div></div>
+                <div><div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)">Member Since</div><div style="font-size:14px;font-weight:600" id="profile-since">—</div></div>
+                <div><div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3)">Pool ID</div><div style="font-size:14px;font-weight:600" id="profile-pool-id">—</div></div>
+              </div>
+            </div>
+            <button class="btn btn-ghost btn-sm" onclick="showEditProfile()">✎ Edit</button>
+          </div>
+        </div>
+
+        <!-- Season summary strip -->
+        <div class="stat-cards mb-6" id="profile-stats"></div>
+
+        <!-- Badges -->
+        <div class="section-title">Achievements</div>
+        <div class="badges-shelf mb-6" id="badges-shelf"></div>
+
+        <!-- Recent rounds -->
+        <div class="section-title">Recent Rounds</div>
+        <div class="stack" id="profile-rounds"></div>
+
+        <!-- Edit profile modal -->
+        <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:none;align-items:center;justify-content:center;padding:20px">
+          <div style="background:var(--white);border-radius:16px;width:100%;max-width:440px;padding:28px;box-shadow:var(--shadow-xl)">
+            <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;margin-bottom:20px">Edit Profile</div>
+            <div class="form-group"><label>Display Name</label><input class="form-input" id="edit-name"></div>
+            <div class="form-group"><label>Home Club</label><input class="form-input" id="edit-club"></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+              <button class="btn btn-ghost" onclick="hideEditProfile()">Cancel</button>
+              <button class="btn btn-green" onclick="saveEditProfile()">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- POOL MEMBERS VIEW -->
+      <div id="view-members" style="display:none">
+        <div class="grid-3" id="members-grid"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<nav class="mobile-nav"><div class="mobile-nav-items mobile-nav-fill"></div></nav>
+
+<script src="app.js"></script>
+<script>
+const user = requireAuth();
+renderNav('profile');
+
+function switchProfile(view, el) {
+  document.getElementById('view-me').style.display      = view==='me'?'block':'none';
+  document.getElementById('view-members').style.display = view==='members'?'block':'none';
+  document.querySelectorAll('.page-header .tab-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function loadMyProfile() {
+  const initials = (user.displayName||'?').slice(0,2).toUpperCase();
+  document.getElementById('profile-avatar').textContent = initials;
+  document.getElementById('profile-name').textContent   = user.displayName || 'Unknown';
+  document.getElementById('profile-handle').textContent = '@'+(user.username||'—');
+  document.getElementById('profile-club').textContent   = user.homeClub || 'Not set';
+  document.getElementById('profile-since').textContent  = user.joinDate ? fmtDate(user.joinDate) : '2026';
+  document.getElementById('profile-pool-id').textContent = user.poolId || 'Custom';
+
+  const stats  = getStats();
+  const myId   = user.poolId || 'ciaran';
+  const myPool = MOCK_MASTERS_POOL.find(r=>r.id===myId);
+  const wins   = myPool?.pos===1 ? 1 : 0;
+  const worst  = MOCK_MASTERS_POOL[MOCK_MASTERS_POOL.length-1].total;
+  const rumblers = myPool?.total===worst ? 1 : 0;
+
+  document.getElementById('profile-stats').innerHTML = `
+    <div class="stat-card"><div class="sc-label">Rounds Logged</div><div class="sc-value">${stats?.rounds||0}</div></div>
+    <div class="stat-card"><div class="sc-label">Scoring Avg</div><div class="sc-value">${stats?.avg||'—'}</div></div>
+    <div class="stat-card"><div class="sc-label">Pool Wins</div><div class="sc-value gold">${wins} 🏆</div></div>
+    <div class="stat-card"><div class="sc-label">Rumblers</div><div class="sc-value">${rumblers} 🫠</div></div>`;
+
+  // Badges
+  const earned = new Set(getEarnedAchievements().map(a=>a.id));
+  // Auto-grant based on data
+  if(wins>0)              earned.add('winner');
+  if(myPool?.pos<=3)      earned.add('podium');
+  if(rumblers>0)          earned.add('rumbler');
+  if((stats?.rounds||0)>=1) earned.add('statistician');
+  if((stats?.best||99)<80) earned.add('sub-80');
+
+  document.getElementById('badges-shelf').innerHTML = ACHIEVEMENTS.map(a=>`
+    <div class="badge ${earned.has(a.id)?'earned':'locked'}" title="${a.desc}">
+      <div class="badge-icon">${a.icon}</div>
+      <div class="badge-name">${a.name}</div>
+    </div>`).join('');
+
+  // Recent rounds
+  const rounds = getRounds().slice(0,3);
+  document.getElementById('profile-rounds').innerHTML = rounds.length ? rounds.map(r=>`
+    <div class="round-card">
+      <div class="rc-main">
+        <div class="rc-course">${r.course}</div>
+        <div class="rc-date">${fmtDate(r.date)}</div>
+        <div class="rc-stats">
+          <div class="rc-stat">Putts: <strong>${r.totalPutts||'—'}</strong></div>
+          <div class="rc-stat">GIR: <strong>${r.gir!=null?r.gir+'/18':'—'}</strong></div>
+        </div>
+      </div>
+      <div class="rc-score">
+        <div class="rc-gross">${r.grossScore}</div>
+        <div class="rc-vs-par ${scoreClass(r.vspar)}">${fmtScore(r.vspar)}</div>
+      </div>
+    </div>`).join('') :
+    `<div class="empty-state"><div class="empty-icon">⛳</div>No rounds yet. <a href="rounds.html#new" style="color:var(--green-700);font-weight:700">Log your first round →</a></div>`;
+}
+
+function loadMembers() {
+  const myId = user.poolId||'ciaran';
+  document.getElementById('members-grid').innerHTML = POOL_PICKS.map(p => {
+    const poolResult = MOCK_MASTERS_POOL.find(r=>r.id===p.id);
+    const isMe = p.id===myId;
+    const worst = MOCK_MASTERS_POOL[MOCK_MASTERS_POOL.length-1].total;
+    const isLast = poolResult?.total===worst;
+    const isWinner = poolResult?.pos===1;
+    return `<div class="card">
+      <div class="card-body" style="text-align:center">
+        <div style="width:56px;height:56px;border-radius:50%;background:var(--green-700);border:${isMe?'3px solid var(--gold)':'2px solid var(--border)'};display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold);margin:0 auto 10px">
+          ${p.initials}
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700">${p.name}</div>
+        ${isMe?'<div class="tag green" style="margin:4px auto;display:inline-block">you</div>':''}
+        ${isWinner?'<div style="font-size:20px;margin:4px 0" title="Masters winner">🏆</div>':''}
+        ${isLast?'<div style="font-size:20px;margin:4px 0" title="Rumbler">🫠</div>':''}
+        ${poolResult?`<div style="font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:${scoreClass(poolResult.total)==='under'?'var(--under)':'var(--over)'};margin:8px 0">${fmtScore(poolResult.total)}</div>
+        <div style="font-size:12px;color:var(--text-3)">Masters · ${poolResult.pos}${['st','nd','rd'][poolResult.pos-1]||'th'} place</div>
+        <div class="divider" style="margin:12px 0"></div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;font-weight:700;letter-spacing:1px;text-transform:uppercase">Picks</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          ${p.picks.map(gk=>`<div style="font-size:12px;padding:4px 8px;background:var(--cream);border-radius:6px">${gk.split(' ').slice(-1)[0]}</div>`).join('')}
+        </div>`:'<div style="font-size:12px;color:var(--text-3);margin-top:8px">No data</div>'}
+        ${!isMe?`<button class="btn btn-ghost btn-sm btn-full mt-4" onclick="window.location.href='pool.html#h2h'">⚔️ H2H</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showEditProfile() {
+  document.getElementById('edit-name').value = user.displayName||'';
+  document.getElementById('edit-club').value = user.homeClub||'';
+  document.getElementById('edit-modal').style.display='flex';
+}
+function hideEditProfile() { document.getElementById('edit-modal').style.display='none'; }
+function saveEditProfile() {
+  user.displayName = document.getElementById('edit-name').value.trim()||user.displayName;
+  user.homeClub    = document.getElementById('edit-club').value.trim();
+  setUser(user);
+  hideEditProfile();
+  loadMyProfile();
+  renderNav('profile');
+}
+
+loadMyProfile();
+loadMembers();
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Season · Ama-Ting Tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Source+Sans+3:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="app-shell">
+  <nav class="sidebar">
+    <div class="sidebar-logo"><div class="logo-eyebrow">The Golf Pool</div><h2>Ama-<em>Ting</em></h2></div>
+    <div class="sidebar-user sidebar-user-fill"></div>
+    <div class="sidebar-nav sidebar-nav-fill"></div>
+    <div class="sidebar-footer"><div class="sign-out-btn sign-out">Sign out</div></div>
+  </nav>
+  <div class="main">
+    <div class="page-header">
+      <div><h1>Season 2026</h1><div class="header-sub">4 majors · 4 picks · 1 champion</div></div>
+      <div class="header-actions">
+        <span class="tag gold">In progress</span>
+      </div>
+    </div>
+    <div class="page-body">
+
+      <!-- Season progress -->
+      <div class="card mb-6">
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+            <div id="tourney-status-masters" class="tourney-status-card"></div>
+            <div id="tourney-status-pga" class="tourney-status-card"></div>
+            <div id="tourney-status-usopen" class="tourney-status-card"></div>
+            <div id="tourney-status-theopen" class="tourney-status-card"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Season standings -->
+      <div class="section-title">Season Standings</div>
+      <div class="card mb-6" style="overflow:hidden">
+        <div style="overflow-x:auto">
+          <table class="season-table" style="min-width:640px">
+            <thead><tr>
+              <th style="width:44px">Pos</th>
+              <th style="text-align:left">Player</th>
+              <th>Masters</th>
+              <th>PGA</th>
+              <th>US Open</th>
+              <th>The Open</th>
+              <th>Wins</th>
+              <th>🫠</th>
+              <th>Total</th>
+            </tr></thead>
+            <tbody id="season-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Records section -->
+      <div class="section-title">Season Records</div>
+      <div class="grid-2 mb-6" id="records-grid"></div>
+
+      <!-- Next tournament countdown -->
+      <div id="next-up-card"></div>
+
+    </div>
+  </div>
+</div>
+<nav class="mobile-nav"><div class="mobile-nav-items mobile-nav-fill"></div></nav>
+
+<style>
+.tourney-status-card {
+  padding:14px;
+  border-radius:var(--radius-lg);
+  border:1px solid var(--border);
+  text-align:center;
+}
+.tourney-status-card.live   { background:rgba(76,175,80,0.07); border-color:rgba(76,175,80,0.3); }
+.tourney-status-card.done   { background:var(--green-100); border-color:rgba(26,92,53,0.2); }
+.tourney-status-card.upcoming { background:var(--cream); }
+</style>
+
+<script src="app.js"></script>
+<script>
+const user = requireAuth();
+renderNav('season');
+
+const myId = (user||{}).poolId || 'ciaran';
+
+function buildSeasonData() {
+  // Masters: use live result if saved, else mock
+  const mastersSaved = getPoolResult('masters');
+  const mastersPool  = mastersSaved ? mastersSaved.results : MOCK_MASTERS_POOL;
+
+  // Build per-player season rows
+  return POOL_PICKS.map(p => {
+    const m = mastersPool.find(r=>r.id===p.id);
+    const mastersScore = m ? m.total : null;
+    const mastersPos   = m ? m.pos   : null;
+    const wins    = (mastersPos===1)?1:0;
+    const worst   = mastersPool.length ? mastersPool[mastersPool.length-1].total : 999;
+    const rumblers = (m&&m.total===worst)?1:0;
+    const total   = mastersScore !== null ? mastersScore : null; // only completed
+    return { id:p.id, name:p.name, initials:p.initials,
+      masters:mastersScore, mastersPos,
+      pga:null, usopen:null, theopen:null,
+      wins, rumblers, total };
+  }).sort((a,b)=>{
+    if(a.total===null&&b.total===null) return 0;
+    if(a.total===null) return 1;
+    if(b.total===null) return -1;
+    return a.total-b.total;
+  });
+}
+
+function renderSeason() {
+  const rows = buildSeasonData();
+  const worst = rows.filter(r=>r.total!==null);
+  const worstScore = worst.length ? worst[worst.length-1].total : null;
+
+  document.getElementById('season-tbody').innerHTML = rows.map((r,i) => {
+    const isMe   = r.id===myId;
+    const isLast = r.total!==null && r.total===worstScore;
+    const pos = r.total!==null ? i+1 : '—';
+    const posBadge = i===0&&r.total!==null?'pos-1':i===1&&r.total!==null?'pos-2':i===2&&r.total!==null?'pos-3':'pos-other';
+    const scoreCell = (s,pos_) => s!==null
+      ? `<td class="score-cell ${s<0?'under':s>0?'over':''}">${fmtScore(s)}<br><span style="font-size:10px;color:var(--text-3);font-family:var(--font-body)">${pos_}${['st','nd','rd'][pos_-1]||'th'}</span></td>`
+      : `<td class="score-cell pending">upcoming</td>`;
+
+    return `<tr${isMe?' style="background:rgba(26,58,42,0.04)"':''}>
+      <td style="text-align:center"><div class="pos-badge ${posBadge}" style="margin:0 auto;width:26px;height:26px;font-size:12px">${pos}</div></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="avatar-sm">${r.initials}</div>
+          <span>${r.name}${isMe?' <span class="tag green" style="font-size:9px">you</span>':''}</span>
+        </div>
+      </td>
+      ${scoreCell(r.masters, r.mastersPos)}
+      <td class="score-cell pending">upcoming</td>
+      <td class="score-cell pending">upcoming</td>
+      <td class="score-cell pending">upcoming</td>
+      <td class="wins-cell">${'🏆'.repeat(r.wins)||'—'}</td>
+      <td>${r.rumblers?'🫠':'—'}</td>
+      <td class="total-cell ${r.total!==null?scoreClass(r.total):''}">${r.total!==null?fmtScore(r.total):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderTourneyStatus() {
+  TOURNAMENTS.forEach(t => {
+    const el = document.getElementById('tourney-status-'+t.id);
+    const st = getTournamentStatus(t);
+    const saved = getPoolResult(t.id);
+    el.className = 'tourney-status-card '+(st==='live'?'live':st==='complete'?'done':'upcoming');
+    const statusLabel = st==='live'?'🟢 Live':st==='complete'?'✓ Complete':'⏱ '+t.dates;
+    let winner = '';
+    if(saved&&st==='complete') {
+      const w = saved.results[0];
+      if(w) winner = `<div style="font-size:12px;color:var(--under);font-weight:700;margin-top:4px">${w.participant} wins</div>`;
+    }
+    el.innerHTML = `
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:6px">${t.short}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:14px;font-weight:700">${t.course}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:2px">${t.location}</div>
+      <div style="font-size:11px;margin-top:8px;font-weight:700;color:${st==='live'?'#4caf50':st==='complete'?'var(--under)':'var(--text-3)'}">${statusLabel}</div>
+      ${winner}`;
+  });
+}
+
+function renderRecords() {
+  const mastersPool = getPoolResult('masters')?.results || MOCK_MASTERS_POOL;
+  const sorted = [...mastersPool].sort((a,b)=>a.total-b.total);
+  const winner = sorted[0];
+  const last   = sorted[sorted.length-1];
+
+  // Best individual pick
+  const allGolfers = mastersPool.flatMap(p=>p.golfers.map(g=>({...g,owner:p.participant})));
+  const bestPick   = allGolfers.filter(g=>g.status!=='CUT'&&g.status!=='WD').sort((a,b)=>a.score-b.score)[0];
+  const worstPick  = allGolfers.sort((a,b)=>b.score-a.score)[0];
+
+  document.getElementById('records-grid').innerHTML = [
+    { icon:'🏆', label:'Masters Champion', val:winner?.participant||'—', sub:`${fmtScore(winner?.total)} · 1st place` },
+    { icon:'🫠', label:'Rumbler (Masters)', val:last?.participant||'—', sub:`${fmtScore(last?.total)} · last place` },
+    { icon:'🎯', label:'Best Individual Pick', val:bestPick?.name||'—', sub:`${fmtScore(bestPick?.score)} · picked by ${bestPick?.owner}` },
+    { icon:'💀', label:'Worst Individual Pick', val:worstPick?.name||'—', sub:`${fmtScore(worstPick?.score)} · ${worstPick?.status==='CUT'?'missed cut':'over par'}` },
+  ].map(r=>`<div class="card"><div class="card-body" style="display:flex;align-items:center;gap:16px">
+    <div style="font-size:32px">${r.icon}</div>
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-3);margin-bottom:4px">${r.label}</div>
+      <div style="font-family:'Playfair Display',serif;font-size:18px;font-weight:700">${r.val}</div>
+      <div style="font-size:12px;color:var(--text-3)">${r.sub}</div>
+    </div>
+  </div></div>`).join('');
+}
+
+function renderNextUp() {
+  const next = TOURNAMENTS.find(t=>getTournamentStatus(t)==='upcoming');
+  if(!next) return;
+  document.getElementById('next-up-card').innerHTML = `
+    <div class="card" style="background:var(--green-800);color:var(--cream)">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(201,168,76,0.55);margin-bottom:6px">Next Major</div>
+            <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:900">${next.name}</div>
+            <div style="font-size:13px;color:rgba(245,240,232,0.6);margin-top:4px">${next.course} · ${next.location} · ${next.dates}</div>
+          </div>
+          <div style="display:flex;gap:10px" id="season-countdown"></div>
+        </div>
+      </div>
+    </div>`;
+
+  function tick() {
+    const c = countdown(next.start);
+    if(!c){document.getElementById('season-countdown').innerHTML='<span class="tag green">Live now</span>';return;}
+    document.getElementById('season-countdown').innerHTML = ['days','hrs','min','sec'].map((l,i)=>`
+      <div style="text-align:center;background:rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;min-width:48px">
+        <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:900">${[c.days,String(c.hours).padStart(2,'0'),String(c.mins).padStart(2,'0'),String(c.secs).padStart(2,'0')][i]}</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,0.55)">${l}</div>
+      </div>`).join('');
+  }
+  tick(); setInterval(tick,1000);
+}
+
+renderTourneyStatus();
+renderSeason();
+renderRecords();
+renderNextUp();
+</script>
+</body>
+</html>
