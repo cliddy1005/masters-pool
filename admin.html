@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Ama-Ting Tour</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body class="admin-body">
+
+<!-- PIN OVERLAY -->
+<div class="pin-overlay" id="pin-overlay">
+  <div class="pin-card">
+    <h2>Ama-<em>Ting</em></h2>
+    <p>Enter the admin PIN to continue</p>
+    <input class="pin-input" type="password" id="pin-input" maxlength="10" placeholder="••••" autocomplete="off">
+    <div class="pin-err" id="pin-err"></div>
+    <button class="btn btn-gold btn-full" onclick="checkPin()">Unlock</button>
+  </div>
+</div>
+
+<!-- MAIN ADMIN UI (hidden until PIN unlocked) -->
+<div id="admin-ui" style="display:none">
+<div class="admin-wrap">
+
+  <div class="admin-header">
+    <div class="admin-title">Ama-<em>Ting</em> Admin</div>
+    <a href="index.html" class="btn btn-ghost btn-sm">← View pool</a>
+  </div>
+
+  <!-- Section tabs -->
+  <div class="tab-row">
+    <button class="a-tab active" onclick="switchSection('scores',this)">📊 Enter Scores</button>
+    <button class="a-tab" onclick="switchSection('picks',this)">📝 Edit Picks</button>
+    <button class="a-tab" onclick="switchSection('tools',this)">🔧 Tools</button>
+  </div>
+
+  <!-- ── SCORES SECTION ── -->
+  <div id="sec-scores">
+
+    <div class="card">
+      <div class="card-hdr flex-between">
+        <div class="card-title">Tournament Scores</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="score-tourn" class="form-select" style="width:180px" onchange="loadScoreEditor()">
+            <option value="masters">The Masters</option>
+            <option value="pga">PGA Championship</option>
+            <option value="usopen">US Open</option>
+            <option value="theopen">The Open</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="fetchAndFill()">↻ Fetch live</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="notice" id="scores-saved">✓ Scores saved</div>
+        <div class="err" id="fetch-err"></div>
+        <p class="muted mb-4">Enter scores for each golfer in the pool. Score = strokes vs par (e.g. -3, +2, E). Leave blank if not started. Set Status to CUT or WD if they've missed the cut.</p>
+        <div id="score-editor"></div>
+        <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+          <button class="btn btn-gold" onclick="saveScoreEditor()">Save scores</button>
+          <button class="btn btn-ghost btn-sm" onclick="clearScores()">Clear all scores</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── PICKS SECTION ── -->
+  <div id="sec-picks" style="display:none">
+    <div class="card">
+      <div class="card-hdr flex-between">
+        <div class="card-title">Pool Picks</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="addParticipant()">+ Add person</button>
+          <button class="btn btn-gold btn-sm" onclick="savePicsEditor()">Save picks</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="notice" id="picks-saved">✓ Picks saved</div>
+        <p class="muted mb-4">These picks apply to all 4 majors. Enter the golfer's name exactly as it appears on the leaderboard — the app uses fuzzy matching for common variations.</p>
+        <div style="overflow-x:auto">
+          <table class="picks-table" id="picks-table">
+            <thead><tr><th>Participant</th><th>Pick 1</th><th>Pick 2</th><th>Pick 3</th><th>Pick 4</th><th></th></tr></thead>
+            <tbody id="picks-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TOOLS SECTION ── -->
+  <div id="sec-tools" style="display:none">
+    <div class="card mb-4">
+      <div class="card-hdr"><div class="card-title">Pool Settings</div></div>
+      <div class="card-body">
+        <div class="form-group" style="max-width:300px">
+          <label>Missed cut penalty (strokes)</label>
+          <input class="form-input" id="penalty-val" type="number" min="0" max="50" value="20">
+        </div>
+        <div class="form-group" style="max-width:300px">
+          <label>Admin PIN</label>
+          <input class="form-input" id="new-pin" type="password" placeholder="Enter new PIN">
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="saveSettings()">Save settings</button>
+        <div class="notice" id="settings-saved" style="margin-top:10px">✓ Settings saved</div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-hdr"><div class="card-title">Live Feed URLs</div></div>
+      <div class="card-body">
+        <p class="muted mb-4">These are the confirmed data sources. Use "Fetch live" in the Scores tab to pull them in automatically when a tournament is live.</p>
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          ${TOURNAMENTS.map(t=>`<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 4px;font-weight:700;width:120px">${t.short}</td>
+            <td style="padding:8px 4px;color:var(--t3);word-break:break-all;font-family:monospace;font-size:11px">${t.feed}</td>
+          </tr>`).join('')}
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><div class="card-title" style="color:var(--over)">Danger Zone</div></div>
+      <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="resetPicksToDefault()">Reset picks to defaults</button>
+        <button class="btn btn-red btn-sm" onclick="clearAllData()">Clear all data</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script src="app.js"></script>
+<script>
+// ── PIN ───────────────────────────────────────────────────────────────────────
+
+let adminPin = retrieve('admin_pin', ADMIN_PIN);
+
+function checkPin() {
+  const val = document.getElementById('pin-input').value;
+  if(val === adminPin) {
+    document.getElementById('pin-overlay').style.display='none';
+    document.getElementById('admin-ui').style.display='block';
+    init();
+  } else {
+    document.getElementById('pin-err').textContent='Incorrect PIN. Try again.';
+    document.getElementById('pin-input').value='';
+    document.getElementById('pin-input').focus();
+  }
+}
+document.getElementById('pin-input').addEventListener('keydown', e => { if(e.key==='Enter') checkPin(); });
+document.getElementById('pin-input').focus();
+
+// ── SECTIONS ──────────────────────────────────────────────────────────────────
+
+function switchSection(name, el) {
+  ['scores','picks','tools'].forEach(s => document.getElementById('sec-'+s).style.display = s===name?'block':'none');
+  document.querySelectorAll('.a-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── SCORE EDITOR ─────────────────────────────────────────────────────────────
+
+let scoreRows = []; // [{name, score, status, thru}]
+
+function loadScoreEditor() {
+  const tid    = document.getElementById('score-tourn').value;
+  const picks  = getPicks();
+  const saved  = getScores(tid);
+  const golfers = uniqueGolfers(picks);
+
+  scoreRows = golfers.map(name => {
+    const existing = saved.find(s => match(s.name, name)) || {};
+    return { name, score: existing.score??'', status: existing.status||'active', thru: existing.thru||'' };
+  });
+  renderScoreEditor();
+}
+
+function renderScoreEditor() {
+  const el = document.getElementById('score-editor');
+  if(!scoreRows.length) { el.innerHTML='<div class="empty">No picks set yet. Go to Edit Picks first.</div>'; return; }
+  el.innerHTML = `<table class="scores-table">
+    <thead><tr><th>Golfer</th><th>Score vs Par</th><th>Status</th><th>Thru (hole or F)</th></tr></thead>
+    <tbody>
+      ${scoreRows.map((r,i)=>`<tr>
+        <td style="font-weight:600">${r.name}</td>
+        <td><input type="text" id="sc-score-${i}" value="${r.score===0?'E':r.score||''}" placeholder="e.g. -3, +2, E" style="width:90px" oninput="scoreRows[${i}].score=parseInputScore(this.value)"></td>
+        <td><select id="sc-status-${i}" onchange="scoreRows[${i}].status=this.value">
+          <option value="active"  ${r.status==='active' ?'selected':''}>Active</option>
+          <option value="CUT"     ${r.status==='CUT'    ?'selected':''}>Missed Cut</option>
+          <option value="WD"      ${r.status==='WD'     ?'selected':''}>Withdrawn</option>
+        </select></td>
+        <td><input type="text" id="sc-thru-${i}" value="${r.thru}" placeholder="e.g. 14 or F" style="width:70px" oninput="scoreRows[${i}].thru=this.value"></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function parseInputScore(val) {
+  const v = val.trim().toUpperCase();
+  if(!v||v==='E') return 0;
+  if(v.startsWith('+')) return parseInt(v.slice(1))||0;
+  return parseInt(v)||0;
+}
+
+function saveScoreEditor() {
+  const tid = document.getElementById('score-tourn').value;
+  // Re-read from inputs in case of direct typing
+  scoreRows.forEach((r,i) => {
+    r.score  = parseInputScore(document.getElementById('sc-score-'+i)?.value||'');
+    r.status = document.getElementById('sc-status-'+i)?.value||'active';
+    r.thru   = document.getElementById('sc-thru-'+i)?.value?.trim()||'';
+  });
+  saveScores(tid, scoreRows);
+  flash('scores-saved');
+}
+
+function clearScores() {
+  if(!confirm('Clear all scores for this tournament?')) return;
+  const tid = document.getElementById('score-tourn').value;
+  saveScores(tid, []);
+  scoreRows = scoreRows.map(r => ({...r, score:'', status:'active', thru:''}));
+  renderScoreEditor();
+}
+
+// ── FETCH LIVE SCORES ─────────────────────────────────────────────────────────
+
+async function fetchAndFill() {
+  const tid    = document.getElementById('score-tourn').value;
+  const t      = TOURNAMENTS.find(x=>x.id===tid);
+  const errEl  = document.getElementById('fetch-err');
+  errEl.classList.remove('show');
+  try {
+    const field  = await fetchLive(t);
+    const picks  = getPicks();
+    const golfers = uniqueGolfers(picks);
+    scoreRows = golfers.map(name => {
+      const g = field.find(f => match(f.name, name));
+      if(g) return { name:g.name||name, score:g.score, status:g.status||'active', thru:g.thru||'' };
+      return { name, score:'', status:'notfound', thru:'' };
+    });
+    renderScoreEditor();
+    flash('scores-saved', '✓ Live scores loaded — click Save to keep them');
+  } catch(e) {
+    errEl.textContent='Could not fetch live scores: '+e.message+'. Is the tournament currently live?';
+    errEl.classList.add('show');
+  }
+}
+
+// ── PICKS EDITOR ─────────────────────────────────────────────────────────────
+
+let editPicks = [];
+
+function loadPicksEditor() {
+  editPicks = JSON.parse(JSON.stringify(getPicks()));
+  renderPicksEditor();
+}
+
+function renderPicksEditor() {
+  document.getElementById('picks-tbody').innerHTML = editPicks.map((p,pi)=>`<tr>
+    <td><input value="${p.name}" onchange="editPicks[${pi}].name=this.value" style="width:90px;padding:5px 8px;border:1px solid #d0cabc;border-radius:6px;font-size:13px"></td>
+    ${[0,1,2,3].map(gi=>`<td><input value="${p.picks[gi]||''}" list="golfer-dl" onchange="editPicks[${pi}].picks[${gi}]=this.value" class="picks-table input"></td>`).join('')}
+    <td><button class="btn btn-ghost btn-sm" onclick="removePick(${pi})" style="padding:4px 8px;font-size:11px;color:var(--cut-red)">✕</button></td>
+  </tr>`).join('');
+}
+
+function addParticipant() {
+  editPicks.push({ id:'new_'+Date.now(), name:'New Player', picks:['','','',''] });
+  renderPicksEditor();
+}
+
+function removePick(i) {
+  if(!confirm('Remove '+editPicks[i].name+'?')) return;
+  editPicks.splice(i,1);
+  renderPicksEditor();
+}
+
+function savePicsEditor() {
+  editPicks.forEach((p,i) => {
+    p.id = p.id || 'p_'+i;
+    p.picks = p.picks.map(x=>(x||'').trim()).filter(Boolean);
+    while(p.picks.length<4) p.picks.push('');
+  });
+  savePicks(editPicks.filter(p=>p.name.trim()));
+  flash('picks-saved');
+  // Reload score editor since golfers may have changed
+  loadScoreEditor();
+}
+
+// ── TOOLS ─────────────────────────────────────────────────────────────────────
+
+function saveSettings() {
+  const pen = parseInt(document.getElementById('penalty-val').value)||20;
+  store('missed_cut_penalty', pen);
+  const newPin = document.getElementById('new-pin').value.trim();
+  if(newPin) { store('admin_pin', newPin); adminPin=newPin; document.getElementById('new-pin').value=''; }
+  flash('settings-saved');
+}
+
+function resetPicksToDefault() {
+  if(!confirm('Reset all picks to the default values?')) return;
+  savePicks(DEFAULT_PICKS);
+  loadPicksEditor();
+  flash('picks-saved','✓ Picks reset to defaults');
+}
+
+function clearAllData() {
+  if(!confirm('Clear ALL saved data (scores, picks, settings)? This cannot be undone.')) return;
+  ['picks','scores_masters','scores_pga','scores_usopen','scores_theopen','admin_pin','missed_cut_penalty']
+    .forEach(k=>localStorage.removeItem(STORE+k));
+  alert('All data cleared.');
+  location.reload();
+}
+
+// ── FLASH ─────────────────────────────────────────────────────────────────────
+
+function flash(id, msg) {
+  const el = document.getElementById(id);
+  if(msg) el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+function init() {
+  loadScoreEditor();
+  loadPicksEditor();
+  // Golfer datalist for autocomplete
+  const dl = document.createElement('datalist');
+  dl.id = 'golfer-dl';
+  ['Rory McIlroy','Scottie Scheffler','Xander Schauffele','Bryson DeChambeau','Jon Rahm','Ludvig Åberg','Collin Morikawa','Tommy Fleetwood','Justin Thomas','Justin Rose','Cameron Smith','Brooks Koepka','Matt Fitzpatrick','Dustin Johnson','Shane Lowry','Viktor Hovland','Max Homa','Jordan Spieth','Tony Finau','Hideki Matsuyama','Patrick Cantlay','Cameron Young','Patrick Reed','Wyndham Clark','Russell Henley','Si Woo Kim','Keegan Bradley','Sahith Theegala','Akshay Bhatia','Tom Kim','Nick Dunlap'].forEach(n=>{
+    const o=document.createElement('option'); o.value=n; dl.appendChild(o);
+  });
+  document.body.appendChild(dl);
+}
+</script>
+</body>
+</html>
