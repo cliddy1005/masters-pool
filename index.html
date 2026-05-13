@@ -123,7 +123,7 @@ async function loadTournament() {
     saveFinal(t.id, pool);
     buildTabs();
     renderPool(t, st, pool);
-    renderLeaderboard(picks, HARDCODED_FINALS[t.id]);
+    renderLeaderboard(picks, HARDCODED_FINALS[t.id], st);
     setFetchBar('📋 Final results · Official data');
     return;
   }
@@ -144,7 +144,7 @@ async function loadTournament() {
     if(st === 'live' || st === 'complete') { saveFinal(t.id, pool); buildTabs(); }
 
     renderPool(t, st, pool);
-    renderLeaderboard(picks, field);
+    renderLeaderboard(picks, field, st);
     setFetchBar(`Data: <strong>ESPN</strong> · fetched just now${st==='live'?' · auto-refresh 5 min':''}`);
     if(st==='live') refreshTimer = setInterval(() => loadTournament(), 5*60*1000);
 
@@ -155,7 +155,7 @@ async function loadTournament() {
       const pool = calcPool(getPicks(t.id), cached.scores);
       if(st==='complete'){ saveFinal(t.id,pool); buildTabs(); }
       renderPool(t, st, pool);
-      renderLeaderboard(getPicks(t.id), cached.scores);
+      renderLeaderboard(getPicks(t.id), cached.scores, st);
       setFetchBar(`Data: cached · ${timeAgo(cached.fetchedAt)}`);
     } else {
       showBanner('err', `Could not fetch scores: ${err.message}`);
@@ -347,59 +347,92 @@ function renderSeason() {
 
 // ── FULL LEADERBOARD ──────────────────────────────────────────────────────────
 
-function renderLeaderboard(picks, field) {
+function renderLeaderboard(picks, field, st) {
   const el = document.getElementById('leaderboard-area');
   if(!el || !field?.length) return;
 
   const allPickNames = (picks||[]).flatMap(p => p.picks);
-  const isPicked = name => allPickNames.some(n => match(n, name));
+  const isPicked     = name => allPickNames.some(n => match(n, name));
+  const isComplete   = st === 'complete';
 
   const active = field.filter(g => g.status !== 'CUT' && g.status !== 'WD');
   const cut    = field.filter(g => g.status === 'CUT' || g.status === 'WD');
-  const cutScore = active.length >= 50 ? active[49].score : active.length ? active[active.length-1].score : 999;
+  const cutScore = active.length >= 50 ? active[49].score
+                 : active.length ? active[active.length-1].score : 999;
+
+  // Column layout differs by state
+  const cols    = isComplete ? '56px 1fr 72px' : '56px 1fr 56px 72px';
+  const thead   = isComplete
+    ? `<div>Pos</div><div>Player</div><div style="text-align:right">Score</div>`
+    : `<div>Pos</div><div>Player</div><div style="text-align:center">Thru</div><div style="text-align:right">Score</div>`;
+
+  // Medal colours for top 3
+  const posStyle = pos => {
+    if(pos==='1')    return 'font-weight:900;color:var(--gold-dark,#9a7a2a)';
+    if(pos==='2')    return 'font-weight:700;color:#888';
+    if(pos==='3')    return 'font-weight:700;color:#cd7f32';
+    if(pos==='T2')   return 'font-weight:700;color:#888';
+    if(pos==='T3')   return 'font-weight:700;color:#cd7f32';
+    return 'color:var(--t3)';
+  };
 
   let rows = '', cutInserted = false;
 
   active.forEach(g => {
     if(!cutInserted && g.score > cutScore) {
       cutInserted = true;
-      rows += `<div class="cut-line-row"><div class="cut-line-label">✂ Projected cut</div><div class="cut-line-bar"></div><div class="cut-line-label">${fmtScore(cutScore)}</div></div>`;
+      const label = isComplete ? '✂ Cut line' : '✂ Projected cut';
+      rows += `<div class="cut-line-row"><div class="cut-line-label">${label}</div><div class="cut-line-bar"></div><div class="cut-line-label">${fmtScore(cutScore)}</div></div>`;
     }
     const picked = isPicked(g.name);
-    const isNear = !cutInserted && g.score >= cutScore - 2;
+    const isNear = !isComplete && !cutInserted && g.score >= cutScore - 2;
     const thru   = g.thru === 'F' ? 'F' : g.thru ? 'H'+g.thru : '—';
-    rows += `<div class="golf-row${picked?' picked':''}${isNear?' near-cut':''}">
-      <div class="golf-pos">${g.pos||'—'}</div>
-      <div class="golf-name">${g.name}${picked?'<span class="picked-dot"></span>':''}</div>
-      <div class="gcell" style="text-align:center;font-size:11px;color:var(--t3)">${thru}</div>
-      <div class="gcell ${scoreClass(g.score)}">${fmtScore(g.score)}</div>
+    const scoreEl = `<div class="gcell ${scoreClass(g.score)}" style="text-align:right;font-weight:${picked?'700':'400'}">${fmtScore(g.score)}</div>`;
+    const thruEl  = isComplete ? '' : `<div class="gcell" style="text-align:center;font-size:11px;color:var(--t3)">${thru}</div>`;
+    const nameEl  = `<div class="golf-name" style="${picked?'font-weight:700':''}">
+      ${picked ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>` : ''}
+      ${g.name}
+    </div>`;
+    rows += `<div class="golf-row${isNear?' near-cut':''}" style="grid-template-columns:${cols};${picked?'background:rgba(201,168,76,0.07)':''}">
+      <div class="golf-pos" style="${posStyle(g.pos)}">${g.pos||'—'}</div>
+      ${nameEl}
+      ${thruEl}
+      ${scoreEl}
     </div>`;
   });
 
   if(!cutInserted && active.length)
-    rows += `<div class="cut-line-row"><div class="cut-line-label">✂ Cut</div><div class="cut-line-bar"></div><div class="cut-line-label">${fmtScore(cutScore)}</div></div>`;
+    rows += `<div class="cut-line-row"><div class="cut-line-label">✂ ${isComplete?'Cut line':'Projected cut'}</div><div class="cut-line-bar"></div><div class="cut-line-label">${fmtScore(cutScore)}</div></div>`;
 
-  cut.forEach(g => {
-    const picked = isPicked(g.name);
-    rows += `<div class="golf-row cut${picked?' picked':''}">
-      <div class="golf-pos" style="color:var(--cut-red);font-size:11px">${g.status==='WD'?'WD':'CUT'}</div>
-      <div class="golf-name">${g.name}${picked?'<span class="picked-dot"></span>':''}</div>
-      <div class="gcell"></div>
-      <div class="gcell" style="color:var(--cut-red);font-size:11px;font-weight:700">${g.status==='WD'?'WD':'CUT'}</div>
-    </div>`;
-  });
+  if(cut.length) {
+    rows += `<div style="padding:8px 16px;background:var(--cream-dk,#ede6d6);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cut-red)">Missed Cut — ${cut.length} players</div>`;
+    cut.forEach(g => {
+      const picked = isPicked(g.name);
+      const label  = g.status === 'WD' ? 'WD' : 'CUT';
+      rows += `<div class="golf-row" style="grid-template-columns:${cols};opacity:0.55${picked?';background:rgba(192,57,43,0.05)':''}">
+        <div class="golf-pos" style="color:var(--cut-red);font-size:10px;font-weight:700">${label}</div>
+        <div class="golf-name" style="text-decoration:line-through;color:var(--t3)">
+          ${picked?`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cut-red);margin-right:5px;vertical-align:middle"></span>`:''}
+          ${g.name}
+        </div>
+        ${isComplete ? '' : `<div class="gcell"></div>`}
+        <div class="gcell" style="text-align:right;font-size:10px;font-weight:700;color:var(--cut-red)">${label}</div>
+      </div>`;
+    });
+  }
 
   el.innerHTML = `
-    <div class="sec-label" style="margin-top:28px">Full Leaderboard</div>
-    <div class="golf-table" style="overflow-x:auto">
-      <div class="golf-thead" style="grid-template-columns:52px 1fr 60px 60px">
-        <div>Pos</div><div>Player</div><div style="text-align:center">Thru</div><div style="text-align:center">Total</div>
-      </div>
-      <div style="min-width:320px" id="lb-rows">${rows}</div>
+    <div class="sec-label" style="margin-top:28px">
+      Full Leaderboard
+      <span style="font-size:10px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--t3);margin-left:8px">
+        ${isComplete ? `${active.length} finishers · ${cut.length} missed cut` : `${active.length} active`}
+        · <span style="color:var(--gold-dark,#9a7a2a)">●</span> = picked
+      </span>
+    </div>
+    <div class="golf-table">
+      <div class="golf-thead" style="grid-template-columns:${cols}">${thead}</div>
+      ${rows}
     </div>`;
-
-  // Override golf-row grid for the 4-column layout
-  el.querySelectorAll('.golf-row').forEach(r => r.style.gridTemplateColumns = '52px 1fr 60px 60px');
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
