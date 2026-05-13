@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ama-Ting Tour 2026</title>
+<link rel="stylesheet" href="app.css">
+<style>
+.loading-row { height:64px; background:linear-gradient(90deg,#f0ece4 25%,#faf7f1 50%,#f0ece4 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; margin:1px 0; min-width:640px; }
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.fetch-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:8px 14px; background:rgba(255,255,255,.04); border:1px solid rgba(201,168,76,.12); border-radius:var(--r-md); margin-bottom:14px; font-size:11px; color:rgba(245,240,232,.45); }
+.fetch-bar strong { color:rgba(245,240,232,.7); }
+.banner { border-radius:var(--r-md); padding:10px 14px; font-size:13px; margin-bottom:14px; display:none; }
+.banner.warn { background:rgba(201,168,76,.12); border:1px solid rgba(201,168,76,.3); color:var(--gold-lt); display:block; }
+.banner.err  { background:rgba(139,32,32,.12); border:1px solid rgba(139,32,32,.3); color:#e88; display:block; }
+
+/* Season table */
+.season-wrap { overflow-x:auto; border-radius:var(--r-lg); box-shadow:var(--sh-lg); background:var(--white); }
+.season-table { min-width:640px; width:100%; border-collapse:collapse; font-size:13px; }
+.season-table th { background:var(--green); padding:10px 14px; font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(201,168,76,.65); text-align:center; border-bottom:2px solid var(--gold); }
+.season-table th:nth-child(2) { text-align:left; }
+.season-table td { padding:11px 14px; border-bottom:1px solid var(--cream-dk); text-align:center; vertical-align:middle; }
+.season-table td:nth-child(2) { text-align:left; }
+.season-table tr:last-child td { border-bottom:none; }
+.season-table tr:hover td { background:#faf6ef; }
+.season-table tr.is-last td { background:#fff8f8; }
+
+.major-result { display:inline-flex; flex-direction:column; align-items:center; gap:2px; min-width:50px; }
+.major-pos { font-size:10px; font-weight:700; }
+.major-pos.p1  { color:var(--gold); }
+.major-pos.p2  { color:#888; }
+.major-pos.p3  { color:#cd7f32; }
+.major-pos.pn  { color:var(--t3); }
+.major-pos.pl  { color:var(--over); }
+.major-score   { font-family:'Playfair Display',serif; font-size:15px; font-weight:900; }
+.major-pending { font-size:11px; color:rgba(245,240,232,.3); font-style:italic; }
+.season-total  { font-family:'Playfair Display',serif; font-size:18px; font-weight:900; }
+
+/* Records strip */
+.records { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:20px; }
+.record-card { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:var(--r-lg); padding:16px; }
+.record-icon { font-size:24px; margin-bottom:8px; }
+.record-label { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(201,168,76,.5); margin-bottom:4px; }
+.record-val { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--cream); }
+.record-sub { font-size:11px; color:rgba(245,240,232,.4); margin-top:2px; }
+@media(max-width:600px){ .records{grid-template-columns:1fr 1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="hdr-badge">The Golf Pool · Season 2026</div>
+    <h1>Ama-<em>Ting</em> Tour</h1>
+    <div class="hdr-sub">4 picks · 4 majors · 1 champion</div>
+  </header>
+
+  <!-- Tabs: Season + 4 tournaments -->
+  <div class="tourn-tabs" id="tourn-tabs"></div>
+
+  <div id="banner" class="banner"></div>
+  <div id="main-panel"></div>
+
+  <div style="text-align:center;margin-top:24px">
+    <a href="admin.html" class="btn btn-ghost btn-sm">⚙️ Edit Picks</a>
+  </div>
+
+</div>
+<script src="app.js"></script>
+<script>
+let activeId = null;
+let refreshTimer = null;
+let fetchedAt = {};
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+
+function buildTabs() {
+  const el = document.getElementById('tourn-tabs');
+  el.innerHTML = '';
+
+  // Season tab first
+  const season = document.createElement('div');
+  season.className = 'tourn-tab' + (activeId==='season'?' active':'');
+  season.innerHTML = `<div class="tab-name">🏆 Season</div><div class="tab-status ${hasSeason()?'complete':'upcoming'}">2026</div>`;
+  season.onclick = () => select('season');
+  el.appendChild(season);
+
+  TOURNAMENTS.forEach(t => {
+    const st  = tournStatus(t);
+    const lbl = { live:'🟢 Live', complete:'✓ Final', upcoming:t.dates.split(',')[0] };
+    const div = document.createElement('div');
+    div.className = 'tourn-tab' + (t.id===activeId?' active':'');
+    div.innerHTML = `<div class="tab-name">${t.short}</div><div class="tab-status ${st}">${lbl[st]}</div>`;
+    div.onclick = () => select(t.id);
+    el.appendChild(div);
+  });
+}
+
+function hasSeason() { return TOURNAMENTS.some(t => getFinal(t.id)); }
+
+function select(id) {
+  if(refreshTimer){ clearInterval(refreshTimer); refreshTimer=null; }
+  activeId = id;
+  buildTabs();
+  if(id==='season') renderSeason();
+  else loadTournament();
+}
+
+// ── LOAD TOURNAMENT ───────────────────────────────────────────────────────────
+
+async function loadTournament() {
+  const t  = TOURNAMENTS.find(x => x.id===activeId);
+  const st = tournStatus(t);
+  hideBanner();
+  renderShell(t, st);
+
+  if(st === 'upcoming') { renderUpcoming(t); return; }
+
+  // ── HARDCODED TOURNAMENTS (Masters) — no fetch, use static data directly ──
+  if(t.type === 'hardcoded') {
+    const picks = getPicks(t.id);
+    const pool  = calcPool(picks, HARDCODED_FINALS[t.id]);
+    saveFinal(t.id, pool);        // always update saved final from official data
+    buildTabs();
+    renderPool(t, st, pool);
+    setFetchBar('📋 Final results · Official data');
+    return;
+  }
+
+  // ── LIVE / ESPN TOURNAMENTS ───────────────────────────────────────────────
+  document.getElementById('pool-area').innerHTML = skeleton();
+
+  try {
+    const field  = await fetchLive(t);
+    const picks  = getPicks(t.id);
+    const names  = uniqueGolfers(picks);
+    const rel    = field.filter(g => names.some(n => match(g.name,n)));
+    names.forEach(n => { if(!rel.some(g=>match(g.name,n))) rel.push({name:n,score:0,thru:'',pos:'',status:'notfound'}); });
+    setCache(t.id, rel);
+    fetchedAt[t.id] = new Date().toISOString();
+
+    const pool = calcPool(picks, rel);
+    if(st === 'live' || st === 'complete') { saveFinal(t.id, pool); buildTabs(); }
+
+    renderPool(t, st, pool);
+    setFetchBar(`Data: <strong>ESPN</strong> · fetched just now${st==='live'?' · auto-refresh 5 min':''}`);
+    if(st==='live') refreshTimer = setInterval(() => loadTournament(), 5*60*1000);
+
+  } catch(err) {
+    const cached = getCached(t.id);
+    if(cached?.scores?.length) {
+      showBanner('warn', `Live feed unavailable — showing cached data from ${timeAgo(cached.fetchedAt)}`);
+      const pool = calcPool(getPicks(t.id), cached.scores);
+      if(st==='complete'){ saveFinal(t.id,pool); buildTabs(); }
+      renderPool(t, st, pool);
+      setFetchBar(`Data: cached · ${timeAgo(cached.fetchedAt)}`);
+    } else {
+      showBanner('err', `Could not fetch scores: ${err.message}`);
+      document.getElementById('pool-area').innerHTML = `<div class="empty">No scores available. <a href="#" onclick="loadTournament();return false" style="color:var(--gold)">Retry →</a></div>`;
+    }
+  }
+}
+
+// ── RENDER SHELL ──────────────────────────────────────────────────────────────
+
+function renderShell(t, st) {
+  const live  = st==='live';
+  const label = live ? '🟢 Live — '+t.name : st==='complete' ? t.name+' — Final' : t.name;
+  document.getElementById('main-panel').innerHTML = `
+    <div class="status-bar">
+      <div class="status-live"><div class="pulse ${live?'':'off'}"></div><span>${label}</span></div>
+      <div class="status-right">
+        <span class="status-item"><strong>${t.course}</strong></span>
+        <span class="status-item">${t.location} · ${t.dates}</span>
+        ${st!=='upcoming' && t.type!=='hardcoded' ?`<button class="btn btn-ghost btn-sm" id="ref-btn" onclick="manualRefresh()">↻ Refresh</button>`:''}
+      </div>
+    </div>
+    <div id="fetch-bar" class="fetch-bar" style="display:none"></div>
+    <div class="sec-label" id="pool-label">Pool Standings · ${t.name}</div>
+    <div id="pool-area"></div>
+    <div id="cd-area"></div>`;
+}
+
+// ── UPCOMING ─────────────────────────────────────────────────────────────────
+
+function renderUpcoming(t) {
+  document.getElementById('pool-label').textContent = 'Picks · '+t.name;
+  document.getElementById('cd-area').innerHTML = `
+    <div class="countdown-card" style="margin-bottom:20px">
+      <div class="sec-label">${t.name}</div>
+      <div class="cd-course">${t.course} · ${t.location} · ${t.dates}</div>
+      <div class="cd-digits" id="cd-digits" style="margin-top:14px"></div>
+    </div>`;
+  const picks = getPicks(t.id);
+  document.getElementById('pool-area').innerHTML = picks.length ? `
+    <div class="pool-scroll"><div class="pool-inner">
+      <div class="pool-head" style="grid-template-columns:44px 155px repeat(4,1fr)"><div></div><div>Player</div><div>Pick 1</div><div>Pick 2</div><div>Pick 3</div><div>Pick 4</div></div>
+      ${[...picks].sort((a,b)=>a.name.localeCompare(b.name)).map((p,i)=>`<div class="pool-row" style="grid-template-columns:44px 155px repeat(4,1fr)">
+        <div class="pos pn">${i+1}</div>
+        <div class="pname">${p.name}</div>
+        ${p.picks.map(g=>`<div style="font-size:12px;color:var(--t2)">${g||'—'}</div>`).join('')}
+      </div>`).join('')}
+    </div></div>` : `<div class="empty">No picks set yet. <a href="admin.html" style="color:var(--gold)">Edit picks →</a></div>`;
+
+  function tick(){ const c=countdown(t.start),el=document.getElementById('cd-digits');if(!el)return;if(!c){el.innerHTML='<span style="color:var(--gold-lt);font-weight:700;font-size:18px">🏌️ Tee off!</span>';return;}el.innerHTML=[['Days',c.days],['Hrs',String(c.hours).padStart(2,'0')],['Min',String(c.mins).padStart(2,'0')],['Sec',String(c.secs).padStart(2,'0')]].map(([l,v])=>`<div class="cd-unit"><div class="cd-num">${v}</div><div class="cd-label">${l}</div></div>`).join('');}
+  tick(); refreshTimer=setInterval(tick,1000);
+}
+
+// ── POOL TABLE ────────────────────────────────────────────────────────────────
+
+function renderPool(t, st, pool) {
+  if(!pool.length){ document.getElementById('pool-area').innerHTML='<div class="empty">No picks configured. <a href="admin.html" style="color:var(--gold)">Edit picks →</a></div>';return; }
+  const worst = Math.max(...pool.map(r=>r.total));
+  let html=`<div class="pool-scroll"><div class="pool-inner">
+    <div class="pool-head"><div>Pos</div><div>Player</div><div>Pick 1</div><div>Pick 2</div><div>Pick 3</div><div>Pick 4</div><div style="text-align:right">Total</div></div>`;
+  pool.forEach((r)=>{
+    const isLast = r.total === worst;
+    const pc = r.pos===1?'p1':r.pos===2?'p2':r.pos===3?'p3':isLast?'pl':'pn';
+    const chips=r.golfers.map(g=>{
+      const isCut=g.status==='CUT'||g.status==='WD'||g.status==='notfound';
+      const thru=g.thru==='F'?'F':g.thru?'H'+g.thru:'';
+      return `<div class="chip${isCut?' cut':''}"><div class="cn">${g.name.split(' ').slice(-1)[0]}</div><div class="cs ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div><div class="ct">${isCut?'CUT':thru}</div></div>`;
+    }).join('');
+    html+=`<div class="pool-row${isLast?' is-last':''}">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div class="pos ${pc}">${r.pos}</div>${isLast?'<div class="punish">🍺🥃</div>':''}</div>
+      <div><div class="pname">${r.name}</div>${isLast?'<div class="rumbler-label">Rumbler 🫠</div>':''}</div>
+      ${chips}
+      <div class="total ${scoreClass(r.total)}">${fmtScore(r.total)}</div>
+    </div>`;
+  });
+  document.getElementById('pool-area').innerHTML=html+'</div></div>';
+}
+
+// ── SEASON STANDINGS ─────────────────────────────────────────────────────────
+
+function renderSeason() {
+  document.getElementById('main-panel').innerHTML = `
+    <div class="status-bar">
+      <div class="status-live"><div class="pulse off"></div><span>Season 2026 — Overall Standings</span></div>
+      <div class="status-right"><span class="status-item">4 picks · 4 majors · lowest total wins</span></div>
+    </div>
+    <div id="season-content"></div>`;
+
+  const rows = calcSeason();
+  const completedTournaments = TOURNAMENTS.filter(t => getFinal(t.id));
+  const upcomingTournaments  = TOURNAMENTS.filter(t => !getFinal(t.id));
+
+  if(!rows.length) {
+    document.getElementById('season-content').innerHTML = `<div class="empty" style="color:rgba(245,240,232,.4);padding:40px">No completed tournaments yet</div>`;
+    return;
+  }
+
+  // Records strip
+  const sorted  = [...rows].sort((a,b)=>a.totalScore-b.totalScore);
+  const leader  = sorted[0];
+  const trailer = sorted[sorted.length-1];
+  const mostWins= sorted.sort((a,b)=>b.wins-a.wins)[0];
+  let html = `<div class="records">
+    <div class="record-card"><div class="record-icon">🏆</div><div class="record-label">Season leader</div><div class="record-val">${leader.name}</div><div class="record-sub">${fmtScore(leader.totalScore)} · ${leader.majorsPlayed} major${leader.majorsPlayed!==1?'s':''}</div></div>
+    <div class="record-card"><div class="record-icon">🫠</div><div class="record-label">Most rumblers</div><div class="record-val">${trailer.name}</div><div class="record-sub">${fmtScore(trailer.totalScore)} · ${trailer.rumblers} 🫠</div></div>
+    <div class="record-card"><div class="record-icon">🎯</div><div class="record-label">Most wins</div><div class="record-val">${mostWins.wins>0?mostWins.name:'None yet'}</div><div class="record-sub">${mostWins.wins} win${mostWins.wins!==1?'s':''}</div></div>
+  </div>`;
+
+  // Season table
+  const completedIds = completedTournaments.map(t=>t.id);
+  html += `<div class="sec-label">Season Standings</div>
+  <div class="season-wrap"><table class="season-table">
+    <thead><tr>
+      <th style="width:44px">Pos</th>
+      <th style="text-align:left">Player</th>
+      ${TOURNAMENTS.map(t=>`<th>${t.short}</th>`).join('')}
+      <th>Wins</th>
+      <th>🫠</th>
+      <th>Total</th>
+    </tr></thead>
+    <tbody>`;
+
+  const seasonRows = calcSeason();
+  const seasonBest  = Math.min(...seasonRows.map(r=>r.totalScore));
+  const seasonWorst = Math.max(...seasonRows.map(r=>r.totalScore));
+
+  seasonRows.forEach((r,i) => {
+    const isLast = r.totalScore === seasonWorst && seasonRows.length > 1;
+    const isBest = r.totalScore === seasonBest;
+    const pc = isBest?'p1':isLast?'pl':'pn';
+    html += `<tr${isLast?' class="is-last"':''}>
+      <td><div class="pos ${pc}" style="margin:0 auto;width:26px;height:26px;font-size:12px">${i+1}</div></td>
+      <td style="font-family:'Playfair Display',serif;font-weight:700">${r.name}</td>`;
+
+    TOURNAMENTS.forEach(t => {
+      const res = r.results[t.id];
+      const st  = tournStatus(t);
+      if(res) {
+        const posClass = res.pos===1?'p1':res.pos===2?'p2':res.pos===3?'p3':'pn';
+        const posLabel = ['st','nd','rd'][res.pos-1]||'th';
+        html += `<td><div class="major-result">
+          <div class="major-pos ${posClass}">${res.pos}${posLabel}</div>
+          <div class="major-score ${scoreClass(res.total)}">${fmtScore(res.total)}</div>
+        </div></td>`;
+      } else {
+        html += `<td><div class="major-pending">${st==='upcoming'?t.dates.split(',')[0]:'—'}</div></td>`;
+      }
+    });
+
+    const totalClass = r.totalScore < 0 ? 'under' : r.totalScore > 0 ? 'over' : 'even';
+    html += `<td>${r.wins?'🏆'.repeat(r.wins):'—'}</td>
+      <td>${r.rumblers?'🫠'.repeat(r.rumblers):'—'}</td>
+      <td><div class="season-total ${totalClass}">${fmtScore(r.totalScore)}</div></td>
+    </tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+
+  // Per-tournament results detail
+  if(completedTournaments.length) {
+    html += `<div style="margin-top:28px"><div class="sec-label">Results by Major</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px">`;
+    TOURNAMENTS.forEach(t => {
+      const saved = getFinal(t.id);
+      const st = tournStatus(t);
+      if(saved) {
+        const winner = saved.pool[0];
+        const last   = saved.pool[saved.pool.length-1];
+        html += `<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:var(--r-lg);padding:16px;cursor:pointer" onclick="select('${t.id}')">
+          <div class="sec-label" style="margin-bottom:6px">${t.name}</div>
+          <div style="font-size:12px;color:rgba(245,240,232,.4);margin-bottom:10px">${t.dates}</div>
+          <div style="margin-bottom:6px"><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(201,168,76,.45);margin-bottom:2px">Winner</div>
+          <div style="font-family:'Playfair Display',serif;font-weight:700;color:var(--cream)">${winner.name} <span class="under">${fmtScore(winner.total)}</span></div></div>
+          <div><div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(201,168,76,.45);margin-bottom:2px">Rumbler</div>
+          <div style="font-family:'Playfair Display',serif;font-weight:700;color:var(--cream)">${last.name} <span class="over">${fmtScore(last.total)}</span> 🫠</div></div>
+        </div>`;
+      } else {
+        html += `<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:var(--r-lg);padding:16px;opacity:.5">
+          <div class="sec-label" style="margin-bottom:6px">${t.name}</div>
+          <div style="font-size:12px;color:rgba(245,240,232,.3)">${st==='upcoming'?t.dates:'In progress'}</div>
+        </div>`;
+      }
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('season-content').innerHTML = html;
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+
+function skeleton(){ return`<div class="pool-scroll"><div>${[1,2,3,4,5].map(()=>'<div class="loading-row"></div>').join('')}</div></div>`; }
+function showBanner(type,msg){ const el=document.getElementById('banner');el.textContent=msg;el.className='banner '+type; }
+function hideBanner(){ document.getElementById('banner').className='banner'; }
+function setFetchBar(html){ const b=document.getElementById('fetch-bar');if(b){b.style.display='flex';b.innerHTML=html;} }
+function timeAgo(iso){ if(!iso)return'';const d=Date.now()-new Date(iso).getTime();if(d<60000)return'just now';if(d<3600000)return Math.floor(d/60000)+'m ago';if(d<86400000)return Math.floor(d/3600000)+'h ago';return Math.floor(d/86400000)+'d ago'; }
+function manualRefresh(){ const b=document.getElementById('ref-btn');if(b){b.disabled=true;b.textContent='Fetching…';}loadTournament(); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
+// Default to Season tab if there's completed data, otherwise first live/upcoming tournament
+const hasCompleted = TOURNAMENTS.some(t=>tournStatus(t)==='complete'||getFinal(t.id));
+activeId = hasCompleted ? 'season' :
+  (TOURNAMENTS.find(t=>tournStatus(t)==='live') || TOURNAMENTS.find(t=>tournStatus(t)==='upcoming') || TOURNAMENTS[0]).id;
+buildTabs();
+if(activeId==='season') renderSeason();
+else loadTournament();
+</script>
+</body>
+</html>

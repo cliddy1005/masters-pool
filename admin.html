@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · Ama-Ting Tour</title>
+<link rel="stylesheet" href="app.css">
+
+</head>
+<body class="admin-body">
+
+<!-- PIN OVERLAY -->
+<div class="pin-overlay" id="pin-overlay">
+  <div class="pin-card">
+    <h2>Ama-<em>Ting</em></h2>
+    <p>Enter the admin PIN</p>
+    <input class="pin-input" type="password" id="pin-input" maxlength="10" placeholder="••••" autocomplete="off">
+    <div class="pin-err" id="pin-err"></div>
+    <button class="btn btn-gold btn-full" onclick="checkPin()">Unlock</button>
+  </div>
+</div>
+
+<div id="admin-ui" style="display:none">
+<div class="admin-wrap">
+
+  <div class="admin-header">
+    <div class="admin-title">Ama-<em>Ting</em> · Admin</div>
+    <a href="index.html" class="btn btn-ghost btn-sm">← View pool</a>
+  </div>
+
+  <!-- Section tabs -->
+  <div class="tab-row">
+    <button class="a-tab active" onclick="switchSection('picks',this)">📝 Picks</button>
+    <button class="a-tab" onclick="switchSection('results',this)">📊 Saved Results</button>
+    <button class="a-tab" onclick="switchSection('settings',this)">🔧 Settings</button>
+  </div>
+
+  <!-- ── PICKS ── -->
+  <div id="sec-picks">
+    <div class="card">
+      <div class="card-hdr flex-between">
+        <div>
+          <div class="card-title">Pool Picks</div>
+          <div class="muted mt-1">Each tournament can have different picks</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="picks-tourn" class="form-select" style="width:180px" onchange="loadPicksEditor(); loadField()">
+            <option value="masters">The Masters</option>
+            <option value="pga">PGA Championship</option>
+            <option value="usopen">US Open</option>
+            <option value="theopen">The Open</option>
+          </select>
+          <button class="btn btn-gold btn-sm" onclick="addParticipant()">+ Add Participant</button>
+          <button class="btn btn-gold btn-sm" onclick="savePicksEditor()">Save picks</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="notice" id="picks-saved">✓ Picks saved</div>
+
+        <div style="overflow-x:auto">
+          <table class="picks-table">
+            <thead><tr><th>Participant</th><th>Pick 1</th><th>Pick 2</th><th>Pick 3</th><th>Pick 4</th><th></th></tr></thead>
+            <tbody id="picks-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-gold btn-sm" onclick="savePicksEditor()">Save picks</button>
+          <button class="btn btn-ghost btn-sm" onclick="resetToDefault()">Reset to defaults</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RESULTS ── -->
+  <div id="sec-results" style="display:none">
+    <div class="card mb-4">
+      <div class="card-hdr flex-between">
+        <div class="card-title">Saved Final Results</div>
+        <div style="font-size:12px;color:var(--t3)">Results are saved automatically when a tournament ends</div>
+      </div>
+      <div class="card-body" id="results-body"></div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ── -->
+  <div id="sec-settings" style="display:none">
+    <div class="card mb-4">
+      <div class="card-hdr"><div class="card-title">Pool Settings</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:480px">
+          <div class="form-group">
+            <label>Missed cut penalty (strokes)</label>
+            <input class="form-input" id="penalty-val" type="number" min="0" max="50">
+          </div>
+          <div class="form-group">
+            <label>Change admin PIN</label>
+            <input class="form-input" id="new-pin" type="password" placeholder="New PIN">
+          </div>
+        </div>
+        <button class="btn btn-gold btn-sm" onclick="saveSettings()">Save</button>
+        <div class="notice" id="settings-saved" style="margin-top:10px;display:none">✓ Saved</div>
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-hdr"><div class="card-title">Live Feed URLs</div></div>
+      <div class="card-body">
+        <table style="width:100%;border-collapse:collapse;font-size:12px" id="feed-table"></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-hdr"><div class="card-title" style="color:var(--over)">Danger Zone</div></div>
+      <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="clearCache()">Clear score cache</button>
+        <button class="btn btn-red btn-sm" onclick="clearAll()">Clear ALL data</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<datalist id="golfer-dl"></datalist>
+<div id="field-status" style="font-size:11px;color:var(--t3);margin-bottom:10px;min-height:16px"></div>
+<script src="app.js"></script>
+<script>
+let adminPin = retrieve('admin_pin', ADMIN_PIN);
+let editPicks = [];
+let currentTid = 'masters';
+
+// ── PIN ───────────────────────────────────────────────────────────────────────
+function checkPin(){
+  const val=document.getElementById('pin-input').value;
+  if(val===adminPin){document.getElementById('pin-overlay').style.display='none';document.getElementById('admin-ui').style.display='block';init();}
+  else{document.getElementById('pin-err').textContent='Incorrect PIN.';document.getElementById('pin-input').value='';document.getElementById('pin-input').focus();}
+}
+document.getElementById('pin-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPin();});
+document.getElementById('pin-input').focus();
+
+// ── SECTIONS ──────────────────────────────────────────────────────────────────
+function switchSection(name,el){
+  ['picks','results','settings'].forEach(s=>document.getElementById('sec-'+s).style.display=s===name?'block':'none');
+  document.querySelectorAll('.a-tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  if(name==='results') renderResults();
+}
+
+// ── PICKS EDITOR ─────────────────────────────────────────────────────────────
+
+function loadPicksEditor(){
+  currentTid = document.getElementById('picks-tourn').value;
+  let stored = JSON.parse(JSON.stringify(getPicks(currentTid)));
+
+  // If no picks saved for this tournament yet, seed from Masters participants
+  // with blank golfer slots so admin just needs to fill in names
+  if(!stored.length && currentTid !== 'masters') {
+    const mastersPicks = getPicks('masters');
+    stored = mastersPicks.map(p => ({
+      id: p.id,
+      name: p.name,
+      picks: ['','','','']
+    }));
+  }
+
+  editPicks = stored;
+  editPicks.sort((a,b) => a.name.localeCompare(b.name));
+  renderPicksTable();
+}
+
+function renderPicksTable(){
+  document.getElementById('picks-tbody').innerHTML = editPicks.map((p,pi)=>`
+    <tr>
+      <td><input value="${esc(p.name)}" onchange="editPicks[${pi}].name=this.value" style="width:95px;padding:5px 8px;border:1px solid #d0cabc;border-radius:6px;font-size:13px;font-family:'Source Sans 3',sans-serif"></td>
+      ${[0,1,2,3].map(gi=>`<td style="position:relative">
+        <input id="pick-${pi}-${gi}" value="${esc(p.picks[gi]||'')}" list="golfer-dl"
+          oninput="editPicks[${pi}].picks[${gi}]=this.value; validatePick(${pi},${gi})"
+          onchange="editPicks[${pi}].picks[${gi}]=this.value; validatePick(${pi},${gi})"
+          style="width:150px;padding:5px 28px 5px 8px;border:1px solid #d0cabc;border-radius:6px;font-size:12px;font-family:'Source Sans 3',sans-serif">
+        <span id="pick-status-${pi}-${gi}" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:13px"></span>
+      </td>`).join('')}
+      <td><button onclick="removeParticipant(${pi})" style="background:none;border:none;cursor:pointer;color:#c0392b;font-size:16px;padding:2px 6px" title="Remove">✕</button></td>
+    </tr>`).join('');
+  // Re-validate all after re-render
+  editPicks.forEach((_,pi)=>[0,1,2,3].forEach(gi=>validatePick(pi,gi)));
+}
+
+function validatePick(pi, gi){
+  const val = (editPicks[pi]?.picks[gi]||'').trim();
+  const el  = document.getElementById(`pick-status-${pi}-${gi}`);
+  const inp = document.getElementById(`pick-${pi}-${gi}`);
+  if(!el||!inp) return;
+  if(!val){ el.textContent=''; inp.style.borderColor='#d0cabc'; return; }
+  if(!liveField.length){ el.textContent=''; inp.style.borderColor='#d0cabc'; return; }
+  const found = liveField.some(g => namesMatchAdmin(g, val));
+  el.textContent   = found ? '✓' : '⚠';
+  el.style.color   = found ? 'var(--under)' : 'var(--amber,#b07800)';
+  inp.style.borderColor = found ? 'var(--under)' : '#b07800';
+}
+
+function namesMatchAdmin(fieldName, pickName){
+  const n = s => s.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e')
+    .replace(/[òóôõö]/g,'o').replace(/[ùúûü]/g,'u').replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim();
+  const nf = n(fieldName).replace(/ /g,''), np = n(pickName).replace(/ /g,'');
+  if(nf===np) return true;
+  const lf = n(fieldName).split(' ').pop(), lp = n(pickName).split(' ').pop();
+  if(lf.length>4 && lf===lp) return true;
+  if(nf.length>4 && (nf.includes(np)||np.includes(nf))) return true;
+  return false;
+}
+
+function addParticipant(){
+  editPicks.push({id:'new_'+Date.now(), name:'', picks:['','','','']});
+  editPicks.sort((a,b) => a.name.localeCompare(b.name));
+  renderPicksTable();
+  // Focus the new name input
+  const inputs = document.querySelectorAll('#picks-tbody tr:last-child td:first-child input');
+  if(inputs.length) inputs[0].focus();
+}
+
+function removeParticipant(i){
+  if(!confirm('Remove '+editPicks[i].name+'?'))return;
+  editPicks.splice(i,1);
+  renderPicksTable();
+}
+
+function savePicksEditor(){
+  editPicks.forEach((p,i)=>{
+    if(!p.id)p.id='p_'+i;
+    p.picks=p.picks.map(x=>(x||'').trim());
+    while(p.picks.length<4)p.picks.push('');
+  });
+  savePicks(currentTid, editPicks.filter(p=>p.name.trim()));
+  flash('picks-saved');
+}
+
+function resetToDefault(){
+  if(!confirm('Reset picks for this tournament to defaults?'))return;
+  savePicks(currentTid, DEFAULT_PICKS[currentTid]||DEFAULT_PICKS.masters);
+  loadPicksEditor();
+  flash('picks-saved','✓ Picks reset to defaults');
+}
+
+// ── RESULTS ──────────────────────────────────────────────────────────────────
+
+function renderResults(){
+  let html='';
+  TOURNAMENTS.forEach(t=>{
+    const saved=getFinal(t.id);
+    const st=tournStatus(t);
+    html+=`<div style="margin-bottom:20px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">${t.name} · ${t.dates}</div>`;
+    if(saved){
+      const pool=saved.pool;
+      const worst=pool[pool.length-1].total;
+      html+=`<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px">
+        <thead><tr style="background:var(--green)"><th style="padding:8px 12px;text-align:left;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.65)">Pos</th><th style="padding:8px 12px;text-align:left;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.65)">Player</th><th style="padding:8px 12px;text-align:right;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.65)">Total</th></tr></thead>
+        <tbody>
+          ${pool.map((r,i)=>{
+            const isLast=r.total===worst;
+            const col=i===0?'var(--gold)':i===1?'#888':i===2?'#cd7f32':'var(--t3)';
+            return `<tr style="border-bottom:1px solid var(--border)${isLast?';background:#fff8f8':''}">
+              <td style="padding:8px 12px;font-weight:700;color:${col}">${r.pos}</td>
+              <td style="padding:8px 12px;font-family:'Playfair Display',serif;font-weight:700">${r.name}${isLast?' 🫠':''}</td>
+              <td style="padding:8px 12px;text-align:right;font-family:'Playfair Display',serif;font-size:16px;font-weight:900;color:${r.total<0?'var(--under)':r.total>0?'var(--over)':'var(--t2)'}">${fmtScore(r.total)}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div style="display:flex;gap:8px">
+        <span class="tag green" style="font-size:11px">Saved ${saved.savedAt?new Date(saved.savedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span>
+        <button class="btn btn-ghost btn-sm" style="font-size:11px" onclick="clearResult('${t.id}')">Clear result</button>
+      </div>`;
+    } else {
+      html+=`<div class="muted" style="padding:10px 0">${st==='upcoming'?'Upcoming — '+t.dates:st==='live'?'In progress — results save automatically':'No result saved yet'}</div>`;
+    }
+    html+='</div>';
+    if(t!==TOURNAMENTS[TOURNAMENTS.length-1]) html+='<div style="height:1px;background:var(--border);margin-bottom:16px"></div>';
+  });
+  document.getElementById('results-body').innerHTML=html||'<div class="empty">No results saved yet</div>';
+}
+
+function clearResult(tid){
+  if(!confirm('Clear saved result for '+TOURNAMENTS.find(t=>t.id===tid)?.name+'? This cannot be undone.'))return;
+  localStorage.removeItem(STORE+'final_'+tid);
+  renderResults();
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function saveSettings(){
+  store('missed_cut_penalty',parseInt(document.getElementById('penalty-val').value)||20);
+  const np=document.getElementById('new-pin').value.trim();
+  if(np){store('admin_pin',np);adminPin=np;document.getElementById('new-pin').value='';}
+  const el=document.getElementById('settings-saved');el.style.display='block';el.classList.add('show');setTimeout(()=>{el.classList.remove('show');el.style.display='none';},2500);
+}
+function clearCache(){if(!confirm('Clear score cache?'))return;TOURNAMENTS.forEach(t=>localStorage.removeItem(STORE+'cache_'+t.id));alert('Cache cleared.');}
+function clearAll(){if(!confirm('Clear ALL data? This cannot be undone.'))return;['picks_masters','picks_pga','picks_usopen','picks_theopen','admin_pin','missed_cut_penalty','final_masters','final_pga','final_usopen','final_theopen','cache_masters','cache_pga','cache_usopen','cache_theopen'].forEach(k=>localStorage.removeItem(STORE+k));alert('All data cleared.');location.reload();}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function flash(id,msg){const el=document.getElementById(id);if(msg)el.textContent=msg;el.style.display='block';el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3000);}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+// Static fallback field — well-known major participants
+const STATIC_FIELD = ['Rory McIlroy','Scottie Scheffler','Xander Schauffele','Bryson DeChambeau','Jon Rahm','Ludvig Åberg','Collin Morikawa','Tommy Fleetwood','Justin Thomas','Justin Rose','Cameron Smith','Brooks Koepka','Matt Fitzpatrick','Dustin Johnson','Shane Lowry','Viktor Hovland','Max Homa','Jordan Spieth','Tony Finau','Hideki Matsuyama','Patrick Cantlay','Cameron Young','Patrick Reed','Wyndham Clark','Russell Henley','Si Woo Kim','Keegan Bradley','Sahith Theegala','Akshay Bhatia','Tom Kim','Nick Dunlap','Robert MacIntyre','Min Woo Lee','Tyrrell Hatton','Harris English','Sam Burns','Sepp Straka','Jason Day','Patrick Cantlay','Adam Scott','Sungjae Im','Corey Conners','Tommy Fleetwood','Shane Lowry','Russell Henley','Max Homa','Jake Knapp','Brian Harman','Wyndham Clark','Viktor Hovland','Maverick McNealy','Chris Gotterup','Jacob Bridgeman','Nick Taylor','Keegan Bradley'];
+
+let liveField = []; // populated from feed or hardcoded data
+
+function populateDatalist(names){
+  const dl = document.getElementById('golfer-dl');
+  dl.innerHTML = '';
+  [...new Set(names)].sort().forEach(n=>{ const o=document.createElement('option'); o.value=n; dl.appendChild(o); });
+}
+
+async function loadField(){
+  const tid = document.getElementById('picks-tourn').value;
+  const t   = TOURNAMENTS.find(x=>x.id===tid);
+  const statusEl = document.getElementById('field-status');
+
+  // Masters — use hardcoded final data immediately
+  if(tid === 'masters'){
+    liveField = HARDCODED_FINALS.masters.filter(g=>g.status!=='CUT'&&g.status!=='WD').map(g=>g.name)
+                .concat(HARDCODED_FINALS.masters.filter(g=>g.status==='CUT'||g.status==='WD').map(g=>g.name));
+    populateDatalist(liveField);
+    statusEl.textContent = '✓ Validating against official Masters 2026 field ('+liveField.length+' players)';
+    statusEl.style.color = 'var(--under)';
+    renderPicksTable();
+    return;
+  }
+
+  // Non-masters — start with static list while fetching live
+  liveField = [...STATIC_FIELD];
+  populateDatalist(liveField);
+  statusEl.textContent = 'Loading live field…';
+  statusEl.style.color = 'var(--t3)';
+
+  if(!t?.feed){ statusEl.textContent = 'Using static player list ('+liveField.length+' players)'; return; }
+
+  try {
+    const res  = await fetch(t.feed+'&_='+Date.now());
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const competitors = data?.events?.[0]?.competitions?.[0]?.competitors||[];
+    if(competitors.length){
+      liveField = competitors.map(c=>c.athlete?.displayName||c.athlete?.fullName).filter(Boolean);
+      populateDatalist(liveField);
+      statusEl.textContent = '✓ Live field loaded — '+liveField.length+' players ('+t.name+')';
+      statusEl.style.color = 'var(--under)';
+      renderPicksTable(); // re-validate with live data
+    } else {
+      statusEl.textContent = 'Field not yet published — using static list ('+liveField.length+' players)';
+      statusEl.style.color = 'var(--amber,#b07800)';
+    }
+  } catch(e){
+    statusEl.textContent = 'Could not fetch live field — using static list ('+liveField.length+' players)';
+    statusEl.style.color = 'var(--amber,#b07800)';
+  }
+}
+
+function init(){
+  loadPicksEditor();
+  document.getElementById('penalty-val').value=retrieve('missed_cut_penalty',20);
+  document.getElementById('feed-table').innerHTML=TOURNAMENTS.map(t=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:7px 6px;font-weight:700;white-space:nowrap;width:100px">${t.short}</td><td style="padding:7px 6px;color:var(--t3);font-family:monospace;font-size:10px;word-break:break-all">${t.feed?t.feed.replace('https://',''):'hardcoded'}</td><td style="padding:7px 6px;font-size:11px;color:var(--under);white-space:nowrap">${t.type==='hardcoded'?'Official data':'ESPN ✓'}</td></tr>`).join('');
+  loadField();
+}
+</script>
+</body>
+</html>
