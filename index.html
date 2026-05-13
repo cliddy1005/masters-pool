@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ama-Ting Tour 2026</title>
+<title>Ama Ting-Ting Tour 2026</title>
 <link rel="stylesheet" href="app.css">
 <style>
 .loading-row { height:64px; background:linear-gradient(90deg,#f0ece4 25%,#faf7f1 50%,#f0ece4 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; margin:1px 0; min-width:640px; }
@@ -51,7 +51,7 @@
 
   <header>
     <div class="hdr-badge">The Golf Pool · Season 2026</div>
-    <h1>Ama-<em>Ting</em> Tour</h1>
+    <h1>Ama Ting-<em>Ting</em> Tour</h1>
     <div class="hdr-sub">4 picks · 4 majors · 1 champion</div>
   </header>
 
@@ -120,9 +120,10 @@ async function loadTournament() {
   if(t.type === 'hardcoded') {
     const picks = getPicks(t.id);
     const pool  = calcPool(picks, HARDCODED_FINALS[t.id]);
-    saveFinal(t.id, pool);        // always update saved final from official data
+    saveFinal(t.id, pool);
     buildTabs();
     renderPool(t, st, pool);
+    renderLeaderboard(picks, HARDCODED_FINALS[t.id]);
     setFetchBar('📋 Final results · Official data');
     return;
   }
@@ -143,6 +144,7 @@ async function loadTournament() {
     if(st === 'live' || st === 'complete') { saveFinal(t.id, pool); buildTabs(); }
 
     renderPool(t, st, pool);
+    renderLeaderboard(picks, field);
     setFetchBar(`Data: <strong>ESPN</strong> · fetched just now${st==='live'?' · auto-refresh 5 min':''}`);
     if(st==='live') refreshTimer = setInterval(() => loadTournament(), 5*60*1000);
 
@@ -153,6 +155,7 @@ async function loadTournament() {
       const pool = calcPool(getPicks(t.id), cached.scores);
       if(st==='complete'){ saveFinal(t.id,pool); buildTabs(); }
       renderPool(t, st, pool);
+      renderLeaderboard(getPicks(t.id), cached.scores);
       setFetchBar(`Data: cached · ${timeAgo(cached.fetchedAt)}`);
     } else {
       showBanner('err', `Could not fetch scores: ${err.message}`);
@@ -178,7 +181,8 @@ function renderShell(t, st) {
     <div id="fetch-bar" class="fetch-bar" style="display:none"></div>
     <div class="sec-label" id="pool-label">Pool Standings · ${t.name}</div>
     <div id="pool-area"></div>
-    <div id="cd-area"></div>`;
+    <div id="cd-area"></div>
+    <div id="leaderboard-area"></div>`;
 }
 
 // ── UPCOMING ─────────────────────────────────────────────────────────────────
@@ -339,6 +343,63 @@ function renderSeason() {
   }
 
   document.getElementById('season-content').innerHTML = html;
+}
+
+// ── FULL LEADERBOARD ──────────────────────────────────────────────────────────
+
+function renderLeaderboard(picks, field) {
+  const el = document.getElementById('leaderboard-area');
+  if(!el || !field?.length) return;
+
+  const allPickNames = (picks||[]).flatMap(p => p.picks);
+  const isPicked = name => allPickNames.some(n => match(n, name));
+
+  const active = field.filter(g => g.status !== 'CUT' && g.status !== 'WD');
+  const cut    = field.filter(g => g.status === 'CUT' || g.status === 'WD');
+  const cutScore = active.length >= 50 ? active[49].score : active.length ? active[active.length-1].score : 999;
+
+  let rows = '', cutInserted = false;
+
+  active.forEach(g => {
+    if(!cutInserted && g.score > cutScore) {
+      cutInserted = true;
+      rows += `<div class="cut-line-row"><div class="cut-line-label">✂ Projected cut</div><div class="cut-line-bar"></div><div class="cut-line-label">${fmtScore(cutScore)}</div></div>`;
+    }
+    const picked = isPicked(g.name);
+    const isNear = !cutInserted && g.score >= cutScore - 2;
+    const thru   = g.thru === 'F' ? 'F' : g.thru ? 'H'+g.thru : '—';
+    rows += `<div class="golf-row${picked?' picked':''}${isNear?' near-cut':''}">
+      <div class="golf-pos">${g.pos||'—'}</div>
+      <div class="golf-name">${g.name}${picked?'<span class="picked-dot"></span>':''}</div>
+      <div class="gcell" style="text-align:center;font-size:11px;color:var(--t3)">${thru}</div>
+      <div class="gcell ${scoreClass(g.score)}">${fmtScore(g.score)}</div>
+    </div>`;
+  });
+
+  if(!cutInserted && active.length)
+    rows += `<div class="cut-line-row"><div class="cut-line-label">✂ Cut</div><div class="cut-line-bar"></div><div class="cut-line-label">${fmtScore(cutScore)}</div></div>`;
+
+  cut.forEach(g => {
+    const picked = isPicked(g.name);
+    rows += `<div class="golf-row cut${picked?' picked':''}">
+      <div class="golf-pos" style="color:var(--cut-red);font-size:11px">${g.status==='WD'?'WD':'CUT'}</div>
+      <div class="golf-name">${g.name}${picked?'<span class="picked-dot"></span>':''}</div>
+      <div class="gcell"></div>
+      <div class="gcell" style="color:var(--cut-red);font-size:11px;font-weight:700">${g.status==='WD'?'WD':'CUT'}</div>
+    </div>`;
+  });
+
+  el.innerHTML = `
+    <div class="sec-label" style="margin-top:28px">Full Leaderboard</div>
+    <div class="golf-table" style="overflow-x:auto">
+      <div class="golf-thead" style="grid-template-columns:52px 1fr 60px 60px">
+        <div>Pos</div><div>Player</div><div style="text-align:center">Thru</div><div style="text-align:center">Total</div>
+      </div>
+      <div style="min-width:320px" id="lb-rows">${rows}</div>
+    </div>`;
+
+  // Override golf-row grid for the 4-column layout
+  el.querySelectorAll('.golf-row').forEach(r => r.style.gridTemplateColumns = '52px 1fr 60px 60px');
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────

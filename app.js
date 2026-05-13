@@ -28,9 +28,21 @@ const MASTERS_PICKS = [
   { id:'rayne',  name:'Rayne',  picks:['Jon Rahm','Collin Morikawa','Dustin Johnson','Cameron Young'] },
 ];
 
+const PGA_PICKS = [
+  { id:'storm',      name:'Storm',       picks:['Matt Fitzpatrick','Cameron Young','Justin Rose','Tommy Fleetwood'] },
+  { id:'rick',       name:'Rick',        picks:['Tommy Fleetwood','Bryson DeChambeau','Collin Morikawa','Cameron Smith'] },
+  { id:'ddog',       name:'D.Dog',       picks:['Matt Fitzpatrick','Xander Schauffele','Ludvig Åberg','Akshay Bhatia'] },
+  { id:'rayne',      name:'Rayne',       picks:['Brooks Koepka','Shane Lowry','Matt Fitzpatrick','Jon Rahm'] },
+  { id:'mattfiddler',name:'Matt Fiddler',picks:['Matt Fitzpatrick','Justin Rose','Cameron Young','Rickie Fowler'] },
+  { id:'rhys',       name:'Rhys',        picks:['Cameron Young','Matt Fitzpatrick','Tommy Fleetwood','Ben Griffin'] },
+  { id:'devon',      name:'Devon',       picks:['Cameron Young','Matt Fitzpatrick','Russell Henley','Keegan Bradley'] },
+  { id:'mp',         name:'MP',          picks:['Ludvig Åberg','Alex Fitzpatrick','Bryson DeChambeau','Brooks Koepka'] },
+  { id:'ciaran',     name:'Ciaran',      picks:['Tommy Fleetwood','Cameron Young','Xander Schauffele','Justin Rose'] },
+];
+
 const DEFAULT_PICKS = {
   masters: MASTERS_PICKS,
-  pga:     [], // set via admin when picks are confirmed
+  pga:     PGA_PICKS,
   usopen:  [], // set via admin when picks are confirmed
   theopen: [], // set via admin when picks are confirmed
 };
@@ -147,7 +159,14 @@ const NAME_MAP = {
   'justin rose':'Justin Rose','tommy fleetwood':'Tommy Fleetwood',
   'rory mcilroy':'Rory McIlroy','scottie scheffler':'Scottie Scheffler',
   'patrick reed':'Patrick Reed','dustin johnson':'Dustin Johnson',
-  'justin thomas':'Justin Thomas',
+  'rickie fowler':'Rickie Fowler','ricky fowler':'Rickie Fowler',
+  'alex fitzpatrick':'Alex Fitzpatrick',
+  'russell henley':'Russell Henley','russel henley':'Russell Henley',
+  'ben griffin':'Ben Griffin',
+  'akshay bhatia':'Akshay Bhatia',
+  'shane lowry':'Shane Lowry',
+  'keegan bradley':'Keegan Bradley',
+  'cameron smith':'Cameron Smith',
 };
 function norm(s)  { return s.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e').replace(/[òóôõöø]/g,'o').replace(/[ùúûü]/g,'u').replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim(); }
 function canon(s) { return NAME_MAP[norm(s)]||s.trim(); }
@@ -226,9 +245,9 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
 
 // One-time clear of stale picks for non-Masters tournaments
 (function clearStalePicks(){
-  if(!retrieve('picks_cleared_v2')) {
+  if(!retrieve('picks_cleared_v3')) {
     ['pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'picks_'+tid));
-    store('picks_cleared_v2', true);
+    store('picks_cleared_v3', true);
   }
 })();
 
