@@ -354,70 +354,65 @@ function renderLeaderboard(picks, field, st) {
   const allPickNames = (picks||[]).flatMap(p => p.picks);
   const isPicked     = name => allPickNames.some(n => match(n, name));
   const isComplete   = st === 'complete';
+  const active       = field.filter(g => g.status !== 'CUT' && g.status !== 'WD');
+  const cut          = field.filter(g => g.status === 'CUT' || g.status === 'WD');
+  const cutScore     = active.length >= 50 ? active[49].score
+                     : active.length ? active[active.length-1].score : 999;
 
-  const active = field.filter(g => g.status !== 'CUT' && g.status !== 'WD');
-  const cut    = field.filter(g => g.status === 'CUT' || g.status === 'WD');
-  const cutScore = active.length >= 50 ? active[49].score
-                 : active.length ? active[active.length-1].score : 999;
-
-  // Column layout differs by state
-  const cols    = isComplete ? '56px 1fr 72px' : '56px 1fr 56px 72px';
-  const thead   = isComplete
-    ? `<div>Pos</div><div>Player</div><div style="text-align:right">Score</div>`
-    : `<div>Pos</div><div>Player</div><div style="text-align:center">Thru</div><div style="text-align:right">Score</div>`;
-
-  // Medal colours for top 3
-  const posStyle = pos => {
-    if(pos==='1')    return 'font-weight:900;color:var(--gold-dark,#9a7a2a)';
-    if(pos==='2')    return 'font-weight:700;color:#888';
-    if(pos==='3')    return 'font-weight:700;color:#cd7f32';
-    if(pos==='T2')   return 'font-weight:700;color:#888';
-    if(pos==='T3')   return 'font-weight:700;color:#cd7f32';
-    return 'color:var(--t3)';
+  const posColor = pos => {
+    if(pos==='1')         return '#9a7a2a';
+    if(pos==='2'||pos==='T2') return '#888';
+    if(pos==='3'||pos==='T3') return '#cd7f32';
+    return 'var(--t3,#7a7a6a)';
   };
 
-  let rows = '', cutInserted = false;
+  let bodyRows = '';
+  let cutInserted = false;
 
   active.forEach(g => {
     if(!cutInserted && g.score > cutScore) {
       cutInserted = true;
-      const label = isComplete ? '✂ Cut line' : '✂ Projected cut';
-      rows += `<div class="cut-line-row"><div class="cut-line-label">${label}</div><div class="cut-line-bar"></div><div class="cut-line-label">${fmtScore(cutScore)}</div></div>`;
+      const label = isComplete ? 'Cut line' : 'Projected cut';
+      bodyRows += `<tr>
+        <td colspan="${isComplete?3:4}" style="padding:6px 14px;background:#fff2f0;border-top:2px dashed #e74c3c;border-bottom:2px dashed #e74c3c;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#c0392b">
+          ✂ ${label} &nbsp; ${fmtScore(cutScore)}
+        </td>
+      </tr>`;
     }
+
     const picked = isPicked(g.name);
     const isNear = !isComplete && !cutInserted && g.score >= cutScore - 2;
     const thru   = g.thru === 'F' ? 'F' : g.thru ? 'H'+g.thru : '—';
-    const scoreEl = `<div class="gcell ${scoreClass(g.score)}" style="text-align:right;font-weight:${picked?'700':'400'}">${fmtScore(g.score)}</div>`;
-    const thruEl  = isComplete ? '' : `<div class="gcell" style="text-align:center;font-size:11px;color:var(--t3)">${thru}</div>`;
-    const nameEl  = `<div class="golf-name" style="${picked?'font-weight:700':''}">
-      ${picked ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>` : ''}
-      ${g.name}
-    </div>`;
-    rows += `<div class="golf-row${isNear?' near-cut':''}" style="grid-template-columns:${cols};${picked?'background:rgba(201,168,76,0.07)':''}">
-      <div class="golf-pos" style="${posStyle(g.pos)}">${g.pos||'—'}</div>
-      ${nameEl}
-      ${thruEl}
-      ${scoreEl}
-    </div>`;
+    const bg     = isNear ? 'background:#fffaf0' : picked ? 'background:rgba(201,168,76,0.07)' : '';
+    const sc     = g.score < 0 ? 'color:var(--under,#1a5c35)' : g.score > 0 ? 'color:var(--over,#8b2020)' : 'color:var(--t2,#3a3a3a)';
+
+    bodyRows += `<tr style="${bg}">
+      <td style="padding:9px 10px 9px 14px;font-size:12px;font-weight:700;color:${posColor(g.pos)};white-space:nowrap">${g.pos||'—'}</td>
+      <td style="padding:9px 6px;font-size:13px;${picked?'font-weight:700':''};max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${picked ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold,#c9a84c);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>` : ''}${g.name}
+      </td>
+      ${isComplete ? '' : `<td style="padding:9px 6px;text-align:center;font-size:11px;color:var(--t3,#7a7a6a)">${thru}</td>`}
+      <td style="padding:9px 14px 9px 6px;text-align:right;font-family:'Playfair Display',serif;font-size:15px;font-weight:700;${sc}">${fmtScore(g.score)}</td>
+    </tr>`;
   });
 
-  if(!cutInserted && active.length)
-    rows += `<div class="cut-line-row"><div class="cut-line-label">✂ ${isComplete?'Cut line':'Projected cut'}</div><div class="cut-line-bar"></div><div class="cut-line-label">${fmtScore(cutScore)}</div></div>`;
+  if(!cutInserted && active.length) {
+    bodyRows += `<tr><td colspan="${isComplete?3:4}" style="padding:6px 14px;background:#fff2f0;border-top:2px dashed #e74c3c;border-bottom:2px dashed #e74c3c;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#c0392b">✂ ${isComplete?'Cut line':'Projected cut'} &nbsp; ${fmtScore(cutScore)}</td></tr>`;
+  }
 
   if(cut.length) {
-    rows += `<div style="padding:8px 16px;background:var(--cream-dk,#ede6d6);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cut-red)">Missed Cut — ${cut.length} players</div>`;
+    bodyRows += `<tr><td colspan="${isComplete?3:4}" style="padding:6px 14px;background:var(--cream-dk,#ede6d6);font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--cut-red,#c0392b)">Missed cut — ${cut.length} players</td></tr>`;
     cut.forEach(g => {
       const picked = isPicked(g.name);
       const label  = g.status === 'WD' ? 'WD' : 'CUT';
-      rows += `<div class="golf-row" style="grid-template-columns:${cols};opacity:0.55${picked?';background:rgba(192,57,43,0.05)':''}">
-        <div class="golf-pos" style="color:var(--cut-red);font-size:10px;font-weight:700">${label}</div>
-        <div class="golf-name" style="text-decoration:line-through;color:var(--t3)">
-          ${picked?`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cut-red);margin-right:5px;vertical-align:middle"></span>`:''}
-          ${g.name}
-        </div>
-        ${isComplete ? '' : `<div class="gcell"></div>`}
-        <div class="gcell" style="text-align:right;font-size:10px;font-weight:700;color:var(--cut-red)">${label}</div>
-      </div>`;
+      bodyRows += `<tr style="opacity:0.5${picked?';background:rgba(192,57,43,0.05)':''}">
+        <td style="padding:7px 10px 7px 14px;font-size:10px;font-weight:700;color:var(--cut-red,#c0392b)">${label}</td>
+        <td style="padding:7px 6px;font-size:12px;text-decoration:line-through;color:var(--t3,#7a7a6a)">
+          ${picked ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cut-red,#c0392b);margin-right:5px;vertical-align:middle"></span>` : ''}${g.name}
+        </td>
+        ${isComplete ? '' : '<td></td>'}
+        <td style="padding:7px 14px 7px 6px;text-align:right;font-size:10px;color:var(--cut-red,#c0392b);font-weight:700">${label}</td>
+      </tr>`;
     });
   }
 
@@ -426,12 +421,29 @@ function renderLeaderboard(picks, field, st) {
       Full Leaderboard
       <span style="font-size:10px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--t3);margin-left:8px">
         ${isComplete ? `${active.length} finishers · ${cut.length} missed cut` : `${active.length} active`}
-        · <span style="color:var(--gold-dark,#9a7a2a)">●</span> = picked
+        &nbsp;·&nbsp; <span style="color:var(--gold-dark,#9a7a2a)">●</span> = picked
       </span>
     </div>
-    <div class="golf-table">
-      <div class="golf-thead" style="grid-template-columns:${cols}">${thead}</div>
-      ${rows}
+    <div style="background:var(--white,#fdfaf5);border-radius:14px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.13);border:1px solid var(--border,#e8e3d8)">
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+        <colgroup>
+          <col style="width:52px">
+          <col>
+          ${isComplete ? '' : '<col style="width:54px">'}
+          <col style="width:66px">
+        </colgroup>
+        <thead>
+          <tr style="background:var(--green,#1a3a2a)">
+            <th style="padding:10px 10px 10px 14px;text-align:left;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.65)">Pos</th>
+            <th style="padding:10px 6px;text-align:left;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.65)">Player</th>
+            ${isComplete ? '' : '<th style="padding:10px 6px;text-align:center;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.65)">Thru</th>'}
+            <th style="padding:10px 14px 10px 6px;text-align:right;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(201,168,76,.65)">Score</th>
+          </tr>
+        </thead>
+        <tbody style="border-top:2px solid var(--gold,#c9a84c)">
+          ${bodyRows}
+        </tbody>
+      </table>
     </div>`;
 }
 
