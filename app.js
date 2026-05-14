@@ -218,12 +218,13 @@ function calcPool(picks, scores) {
 
 // ─── SEASON STANDINGS ─────────────────────────────────────────────────────────
 
-const DNS_PENALTY = 80; // Did Not Start penalty
+const DNS_PENALTY = 80; // fallback only — overridden dynamically in calcSeason
 
 function calcSeason() {
   const people = {};
+  const completedTourneys = TOURNAMENTS.filter(t => getFinal(t.id));
 
-  TOURNAMENTS.forEach(t => {
+  completedTourneys.forEach(t => {
     const saved = getFinal(t.id);
     if(!saved?.pool?.length) return;
     const pool  = saved.pool;
@@ -235,18 +236,23 @@ function calcSeason() {
       people[key].results[t.id] = { pos:r.pos, total:r.total };
       people[key].totalScore   += r.total;
       people[key].majorsPlayed += 1;
-      if(r.pos===1)         people[key].wins++;
-      if(r.total===worst)   people[key].rumblers++;
+      if(r.pos===1)       people[key].wins++;
+      if(r.total===worst) people[key].rumblers++;
     });
   });
 
-  // Apply DNS penalty for completed tournaments a participant didn't enter
-  const completedIds = TOURNAMENTS.filter(t => getFinal(t.id)).map(t => t.id);
-  Object.values(people).forEach(p => {
-    completedIds.forEach(tid => {
-      if(!p.results[tid]) {
-        p.results[tid]  = { pos:null, total:DNS_PENALTY, dns:true };
-        p.totalScore   += DNS_PENALTY;
+  // DNS penalty: previous tournament's worst pool score + 20
+  // For the first tournament, fall back to DNS_PENALTY constant
+  completedTourneys.forEach((t, i) => {
+    const prevSaved = i > 0 ? getFinal(completedTourneys[i-1].id) : null;
+    const prevWorst = prevSaved?.pool?.length
+      ? Math.max(...prevSaved.pool.map(r => r.total)) + 20
+      : DNS_PENALTY;
+
+    Object.values(people).forEach(p => {
+      if(!p.results[t.id]) {
+        p.results[t.id] = { pos:null, total:prevWorst, dns:true };
+        p.totalScore   += prevWorst;
       }
     });
   });

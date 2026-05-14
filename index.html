@@ -300,7 +300,7 @@ function renderSeason() {
       if(res?.dns) {
         html += `<td><div class="major-result">
           <div class="major-pos pn" style="color:var(--cut-red);font-size:9px;letter-spacing:1px">DNS</div>
-          <div class="major-score over">+${DNS_PENALTY}</div>
+          <div class="major-score over">+${res.total}</div>
         </div></td>`;
       } else if(res) {
         const posClass = res.pos===1?'p1':res.pos===2?'p2':res.pos===3?'p3':'pn';
