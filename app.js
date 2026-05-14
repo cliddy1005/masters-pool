@@ -26,6 +26,7 @@ const MASTERS_PICKS = [
   { id:'mp',     name:'MP',     picks:['Bryson DeChambeau','Ludvig Åberg','Xander Schauffele','Collin Morikawa'] },
   { id:'mattf',  name:'Matt F', picks:['Matt Fitzpatrick','Bryson DeChambeau','Jon Rahm','Ludvig Åberg'] },
   { id:'rayne',  name:'Rayne',  picks:['Jon Rahm','Collin Morikawa','Dustin Johnson','Cameron Young'] },
+  { id:'devon',  name:'Devon',  picks:['Rasmus Højgaard','Sepp Straka','Ryan Gerard','Jon Rahm'] },
 ];
 
 const PGA_PICKS = [
@@ -217,6 +218,8 @@ function calcPool(picks, scores) {
 
 // ─── SEASON STANDINGS ─────────────────────────────────────────────────────────
 
+const DNS_PENALTY = 80; // Did Not Start penalty
+
 function calcSeason() {
   const people = {};
 
@@ -234,6 +237,17 @@ function calcSeason() {
       people[key].majorsPlayed += 1;
       if(r.pos===1)         people[key].wins++;
       if(r.total===worst)   people[key].rumblers++;
+    });
+  });
+
+  // Apply DNS penalty for completed tournaments a participant didn't enter
+  const completedIds = TOURNAMENTS.filter(t => getFinal(t.id)).map(t => t.id);
+  Object.values(people).forEach(p => {
+    completedIds.forEach(tid => {
+      if(!p.results[tid]) {
+        p.results[tid]  = { pos:null, total:DNS_PENALTY, dns:true };
+        p.totalScore   += DNS_PENALTY;
+      }
     });
   });
 
@@ -281,6 +295,15 @@ function parseESPN(data) {
   }).sort((a,b)=>{
     const ao=a.status!=='active'?1:0, bo=b.status!=='active'?1:0;
     return ao!==bo ? ao-bo : a.score-b.score;
+  }).map((p,i,arr)=>{
+    // Assign positions from sort order when ESPN doesn't provide them (live rounds)
+    if(p.status!=='active'){ p.pos='CUT'; return p; }
+    if(p.pos) return p; // already set by ESPN
+    // Group ties
+    const tied = arr.filter(x=>x.status==='active'&&x.score===p.score);
+    p.pos = tied.length>1 ? 'T'+(arr.filter(x=>x.status==='active'&&x.score<p.score).length+1)
+                          : String(arr.filter(x=>x.status==='active'&&x.score<p.score).length+1);
+    return p;
   });
 }
 
@@ -303,9 +326,18 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
   }
 })();
 
+// Clear stale score caches when match logic changes — bump this version when deploying match fixes
+const CACHE_VERSION = 'v4';
+(function clearStaleCache(){
+  if(retrieve('cache_version') !== CACHE_VERSION) {
+    ['masters','pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
+    store('cache_version', CACHE_VERSION);
+  }
+})();
+
 // Re-seed Masters final from hardcoded data whenever version changes.
 // Must run after NAME_MAP and calcPool are declared.
-const MASTERS_DATA_VERSION = '2026-v3';
+const MASTERS_DATA_VERSION = '2026-v4';
 (function seedMasters(){
   if(retrieve('masters_data_version') !== MASTERS_DATA_VERSION) {
     const pool = calcPool(MASTERS_PICKS, MASTERS_2026_FINAL);

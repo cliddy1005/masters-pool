@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ama Ting-Ting Tour 2026</title>
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="app.css?v=5">
 <style>
 .loading-row { height:64px; background:linear-gradient(90deg,#f0ece4 25%,#faf7f1 50%,#f0ece4 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; margin:1px 0; min-width:640px; }
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -66,7 +66,7 @@
   </div>
 
 </div>
-<script src="app.js"></script>
+<script src="app.js?v=5"></script>
 <script>
 let activeId = null;
 let refreshTimer = null;
@@ -146,8 +146,8 @@ async function loadTournament() {
     renderPool(t, st, pool);
     renderLeaderboard(picks, field, st);
     const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    setFetchBar(`Data: <strong>ESPN</strong> · updated ${now}${st==='live'?' · auto-refreshes every 2 min':''}`);
-    if(st==='live') refreshTimer = setInterval(() => loadTournament(), 2*60*1000);
+    setFetchBar(`Data: <strong>ESPN</strong> · updated ${now}${st==='live'?' · auto-refreshes every 5 min':''}`);
+    if(st==='live') refreshTimer = setInterval(() => loadTournament(), 5*60*1000);
 
   } catch(err) {
     const cached = getCached(t.id);
@@ -297,7 +297,12 @@ function renderSeason() {
     TOURNAMENTS.forEach(t => {
       const res = r.results[t.id];
       const st  = tournStatus(t);
-      if(res) {
+      if(res?.dns) {
+        html += `<td><div class="major-result">
+          <div class="major-pos pn" style="color:var(--cut-red);font-size:9px;letter-spacing:1px">DNS</div>
+          <div class="major-score over">+${DNS_PENALTY}</div>
+        </div></td>`;
+      } else if(res) {
         const posClass = res.pos===1?'p1':res.pos===2?'p2':res.pos===3?'p3':'pn';
         const posLabel = ['st','nd','rd'][res.pos-1]||'th';
         html += `<td><div class="major-result">
