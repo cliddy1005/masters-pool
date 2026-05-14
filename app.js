@@ -33,7 +33,7 @@ const PGA_PICKS = [
   { id:'rick',       name:'Rick',        picks:['Tommy Fleetwood','Bryson DeChambeau','Collin Morikawa','Cameron Smith'] },
   { id:'ddog',       name:'D.Dog',       picks:['Matt Fitzpatrick','Xander Schauffele','Ludvig Åberg','Akshay Bhatia'] },
   { id:'rayne',      name:'Rayne',       picks:['Brooks Koepka','Shane Lowry','Matt Fitzpatrick','Jon Rahm'] },
-  { id:'mattfiddler',name:'Matt Fiddler',picks:['Matt Fitzpatrick','Justin Rose','Cameron Young','Rickie Fowler'] },
+  { id:'mattf',      name:'Matt F',      picks:['Matt Fitzpatrick','Justin Rose','Cameron Young','Rickie Fowler'] },
   { id:'rhys',       name:'Rhys',        picks:['Cameron Young','Matt Fitzpatrick','Tommy Fleetwood','Ben Griffin'] },
   { id:'devon',      name:'Devon',       picks:['Cameron Young','Matt Fitzpatrick','Russell Henley','Keegan Bradley'] },
   { id:'mp',         name:'MP',          picks:['Ludvig Åberg','Alex Fitzpatrick','Bryson DeChambeau','Brooks Koepka'] },
@@ -170,7 +170,21 @@ const NAME_MAP = {
 };
 function norm(s)  { return s.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e').replace(/[òóôõöø]/g,'o').replace(/[ùúûü]/g,'u').replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim(); }
 function canon(s) { return NAME_MAP[norm(s)]||s.trim(); }
-function match(a,b){ if(!a||!b)return false;const ra=canon(a),rb=canon(b);const na=norm(ra).replace(/ /g,''),nb=norm(rb).replace(/ /g,'');if(na===nb)return true;const la=norm(ra).split(' ').pop(),lb=norm(rb).split(' ').pop();if(la.length>4&&la===lb)return true;return false; }
+function match(a,b){
+  if(!a||!b) return false;
+  const ra=canon(a), rb=canon(b);
+  const na=norm(ra).replace(/ /g,''), nb=norm(rb).replace(/ /g,'');
+  if(na===nb) return true;
+  // Last-name-only fallback: only when one side has a single word (e.g. pick entered as just "Fitzpatrick")
+  const wa=norm(ra).split(' ').filter(Boolean), wb=norm(rb).split(' ').filter(Boolean);
+  if(wa.length===1||wb.length===1){
+    const la=wa[wa.length-1], lb=wb[wb.length-1];
+    if(la.length>4&&la===lb) return true;
+  }
+  // Substring match for shortened first names (e.g. "Cam Young" vs "Cameron Young")
+  if(na.length>4&&nb.length>4&&(na.includes(nb)||nb.includes(na))) return true;
+  return false;
+}
 
 // ─── SCORE HELPERS ────────────────────────────────────────────────────────────
 
