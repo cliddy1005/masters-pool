@@ -224,7 +224,9 @@ function renderPool(t, st, pool) {
     const chips=r.golfers.map(g=>{
       const isCut=g.status==='CUT'||g.status==='WD'||g.status==='notfound';
       const thru=g.thru==='F'?'F':g.thru?'H'+g.thru:'';
-      return `<div class="chip${isCut?' cut':''}"><div class="cn">${g.name.split(' ').slice(-1)[0]}</div><div class="cs ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div><div class="ct">${isCut?'CUT':thru}</div></div>`;
+      const parts=g.name.split(' ');
+      const chipName=parts.length>=2?parts[0]+' '+parts[parts.length-1]:g.name;
+      return `<div class="chip${isCut?' cut':''}"><div class="cn">${chipName}</div><div class="cs ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div><div class="ct">${isCut?'CUT':thru}</div></div>`;
     }).join('');
     html+=`<div class="pool-row${isLast?' is-last':''}">
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div class="pos ${pc}">${r.pos}</div>${isLast?'<div class="punish">🍺🥃</div>':''}</div>

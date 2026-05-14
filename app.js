@@ -175,15 +175,18 @@ function match(a,b){
   const ra=canon(a), rb=canon(b);
   const na=norm(ra).replace(/ /g,''), nb=norm(rb).replace(/ /g,'');
   if(na===nb) return true;
-  // Last-name-only fallback: only when one side has a single word (e.g. pick entered as just "Fitzpatrick")
   const wa=norm(ra).split(' ').filter(Boolean), wb=norm(rb).split(' ').filter(Boolean);
+  // Single-word on either side: last name only comparison (e.g. pick entered as "Fitzpatrick")
   if(wa.length===1||wb.length===1){
     const la=wa[wa.length-1], lb=wb[wb.length-1];
-    if(la.length>4&&la===lb) return true;
+    return la.length>4 && la===lb;
   }
-  // Substring match for shortened first names (e.g. "Cam Young" vs "Cameron Young")
-  if(na.length>4&&nb.length>4&&(na.includes(nb)||nb.includes(na))) return true;
-  return false;
+  // Both have first + last name: require last names match AND first names start the same
+  // This handles "Cam Young" == "Cameron Young" but NOT "Alex Fitzpatrick" == "Matt Fitzpatrick"
+  const lastA=wa[wa.length-1], lastB=wb[wb.length-1];
+  if(lastA!==lastB) return false;
+  const firstA=wa[0], firstB=wb[0];
+  return firstA.startsWith(firstB) || firstB.startsWith(firstA);
 }
 
 // ─── SCORE HELPERS ────────────────────────────────────────────────────────────
