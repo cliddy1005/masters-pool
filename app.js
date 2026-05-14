@@ -225,12 +225,47 @@ function calcSeason() {
 
 // ─── TOURNAMENT STATUS ────────────────────────────────────────────────────────
 
-function tournStatus(t){ const now=new Date(),s=new Date(t.start+'T08:00:00'),e=new Date(t.end+'T20:00:00');if(now>=s&&now<=e)return'live';if(now>e)return'complete';return'upcoming'; }
-function countdown(startStr){ const diff=new Date(startStr+'T08:00:00')-new Date();if(diff<=0)return null;return{days:Math.floor(diff/86400000),hours:Math.floor((diff%86400000)/3600000),mins:Math.floor((diff%3600000)/60000),secs:Math.floor((diff%60000)/1000)}; }
+function tournStatus(t){ const now=new Date(),s=new Date(t.start+'T00:00:00'),e=new Date(t.end+'T23:59:59');if(now>=s&&now<=e)return'live';if(now>e)return'complete';return'upcoming'; }
+function countdown(startStr){ const diff=new Date(startStr+'T00:00:00')-new Date();if(diff<=0)return null;return{days:Math.floor(diff/86400000),hours:Math.floor((diff%86400000)/3600000),mins:Math.floor((diff%3600000)/60000),secs:Math.floor((diff%60000)/1000)}; }
 
 // ─── FEED PARSERS ─────────────────────────────────────────────────────────────
 
-function parseESPN(data){ return(data?.events?.[0]?.competitions?.[0]?.competitors||[]).map(c=>{const raw=c.score?.value,disp=c.score?.displayValue;let score=0;if(typeof raw==='number')score=raw;else if(disp==='E')score=0;else if(disp)score=parseInt(disp.replace('+',''),10)||0;const st=(c.status?.type||'').toLowerCase(),cut=st.includes('cut'),wd=st.includes('wd')||st.includes('withdraw');return{name:c.athlete?.displayName||'Unknown',score,thru:String(c.status?.period||''),pos:c.status?.position?.displayName||'',status:cut?'CUT':wd?'WD':'active'};}).sort((a,b)=>{const ao=a.status!=='active'?1:0,bo=b.status!=='active'?1:0;return ao!==bo?ao-bo:a.score-b.score;}); }
+function parseESPN(data) {
+  const competitors = data?.events?.[0]?.competitions?.[0]?.competitors||[];
+  return competitors.map(c => {
+    // Live format: c.score is a plain string e.g. "-3", "E", "+2"
+    // Completed format: c.score is an object with .value / .displayValue
+    let score = 0;
+    const raw = c.score;
+    if(typeof raw === 'string') {
+      const s = raw.trim();
+      score = (s===''||s==='E') ? 0 : parseInt(s.replace('+',''),10)||0;
+    } else if(typeof raw === 'number') {
+      score = raw;
+    } else if(raw?.displayValue) {
+      score = raw.displayValue==='E' ? 0 : parseInt(raw.displayValue.replace('+',''),10)||0;
+    } else if(typeof raw?.value === 'number') {
+      score = raw.value;
+    }
+
+    // status is null during live rounds
+    const stType = (c.status?.type||'').toLowerCase();
+    const cut    = stType.includes('cut');
+    const wd     = stType.includes('wd')||stType.includes('withdraw');
+
+    // thru: count holes in current round linescores
+    const curRound    = (c.linescores||[])[0];
+    const holesPlayed = curRound?.linescores?.length||0;
+    const thru        = holesPlayed >= 18 ? 'F' : holesPlayed > 0 ? String(holesPlayed) : '';
+
+    const pos = c.status?.position?.displayName||'';
+
+    return { name:c.athlete?.displayName||c.athlete?.fullName||'Unknown', score, thru, pos, status:cut?'CUT':wd?'WD':'active' };
+  }).sort((a,b)=>{
+    const ao=a.status!=='active'?1:0, bo=b.status!=='active'?1:0;
+    return ao!==bo ? ao-bo : a.score-b.score;
+  });
+}
 
 async function fetchLive(t){
   const res=await fetch(t.feed+'&_='+Date.now());

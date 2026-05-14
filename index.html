@@ -145,8 +145,9 @@ async function loadTournament() {
 
     renderPool(t, st, pool);
     renderLeaderboard(picks, field, st);
-    setFetchBar(`Data: <strong>ESPN</strong> · fetched just now${st==='live'?' · auto-refresh 5 min':''}`);
-    if(st==='live') refreshTimer = setInterval(() => loadTournament(), 5*60*1000);
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    setFetchBar(`Data: <strong>ESPN</strong> · updated ${now}${st==='live'?' · auto-refreshes every 2 min':''}`);
+    if(st==='live') refreshTimer = setInterval(() => loadTournament(), 2*60*1000);
 
   } catch(err) {
     const cached = getCached(t.id);
