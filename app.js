@@ -5,10 +5,10 @@ const ADMIN_PIN  = '1005';
 const STORE      = 'amt_';
 
 const TOURNAMENTS = [
-  { id:'masters',  name:'The Masters',      short:'Masters',   course:'Augusta National',    location:'Augusta, GA',        dates:'Apr 9–12, 2026',  start:'2026-04-09', end:'2026-04-12', feed:null,                                                                                                                           type:'hardcoded' },
-  { id:'pga',      name:'PGA Championship', short:'PGA Champ', course:'Aronimink Golf Club',  location:'Newtown Square, PA', dates:'May 14–17, 2026', start:'2026-05-14', end:'2026-05-17', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811947', type:'espn' },
-  { id:'usopen',   name:'US Open',           short:'US Open',   course:'Shinnecock Hills',     location:'Southampton, NY',    dates:'Jun 18–21, 2026', start:'2026-06-18', end:'2026-06-21', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811952', type:'espn' },
-  { id:'theopen',  name:'The Open',          short:'The Open',  course:'Royal Birkdale',       location:'Southport, England', dates:'Jul 16–19, 2026', start:'2026-07-16', end:'2026-07-19', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811957', type:'espn' },
+  { id:'masters',  name:'The Masters',      short:'Masters',   course:'Augusta National',    location:'Augusta, GA',        dates:'Apr 9–12, 2026',  start:'2026-04-09', end:'2026-04-12', feed:null,                                                                                                                           type:'hardcoded', cutPos:50, cutRound:2 },
+  { id:'pga',      name:'PGA Championship', short:'PGA Champ', course:'Aronimink Golf Club',  location:'Newtown Square, PA', dates:'May 14–17, 2026', start:'2026-05-14', end:'2026-05-17', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811947', type:'espn',      cutPos:70, cutRound:2 },
+  { id:'usopen',   name:'US Open',           short:'US Open',   course:'Shinnecock Hills',     location:'Southampton, NY',    dates:'Jun 18–21, 2026', start:'2026-06-18', end:'2026-06-21', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811952', type:'espn',      cutPos:60, cutRound:2 },
+  { id:'theopen',  name:'The Open',          short:'The Open',  course:'Royal Birkdale',       location:'Southport, England', dates:'Jul 16–19, 2026', start:'2026-07-16', end:'2026-07-19', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811957', type:'espn',      cutPos:70, cutRound:2 },
 ];
 
 // ─── PICKS PER TOURNAMENT ─────────────────────────────────────────────────────
@@ -290,9 +290,10 @@ function parseESPN(data) {
     const cut    = stType.includes('cut');
     const wd     = stType.includes('wd')||stType.includes('withdraw');
 
-    // thru: count holes in current round linescores
-    const curRound    = (c.linescores||[])[0];
-    const holesPlayed = curRound?.linescores?.length||0;
+    // thru: find the most recent round (highest period) and count its holes
+    const rounds      = c.linescores||[];
+    const latestRound = rounds.reduce((best, r) => (!best || r.period > best.period) ? r : best, null);
+    const holesPlayed = latestRound?.linescores?.length||0;
     const thru        = holesPlayed >= 18 ? 'F' : holesPlayed > 0 ? String(holesPlayed) : '';
 
     const pos = c.status?.position?.displayName||'';

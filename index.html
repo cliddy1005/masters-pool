@@ -123,7 +123,7 @@ async function loadTournament() {
     saveFinal(t.id, pool);
     buildTabs();
     renderPool(t, st, pool);
-    renderLeaderboard(picks, HARDCODED_FINALS[t.id], st);
+    renderLeaderboard(picks, HARDCODED_FINALS[t.id], st, t);
     setFetchBar('📋 Final results · Official data');
     return;
   }
@@ -144,7 +144,7 @@ async function loadTournament() {
     if(st === 'live' || st === 'complete') { saveFinal(t.id, pool); buildTabs(); }
 
     renderPool(t, st, pool);
-    renderLeaderboard(picks, field, st);
+    renderLeaderboard(picks, field, st, t);
     const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
     setFetchBar(`Data: <strong>ESPN</strong> · updated ${now}${st==='live'?' · auto-refreshes every 5 min':''}`);
     if(st==='live') refreshTimer = setInterval(() => loadTournament(), 5*60*1000);
@@ -156,7 +156,7 @@ async function loadTournament() {
       const pool = calcPool(getPicks(t.id), cached.scores);
       if(st==='complete'){ saveFinal(t.id,pool); buildTabs(); }
       renderPool(t, st, pool);
-      renderLeaderboard(getPicks(t.id), cached.scores, st);
+      renderLeaderboard(getPicks(t.id), cached.scores, st, t);
       setFetchBar(`Data: cached · ${timeAgo(cached.fetchedAt)}`);
     } else {
       showBanner('err', `Could not fetch scores: ${err.message}`);
@@ -355,17 +355,20 @@ function renderSeason() {
 
 // ── FULL LEADERBOARD ──────────────────────────────────────────────────────────
 
-function renderLeaderboard(picks, field, st) {
+function renderLeaderboard(picks, field, st, t) {
   const el = document.getElementById('leaderboard-area');
   if(!el || !field?.length) return;
 
   const allPickNames = (picks||[]).flatMap(p => p.picks);
   const isPicked     = name => allPickNames.some(n => match(n, name));
   const isComplete   = st === 'complete';
+  const cutPos       = t?.cutPos || 70;
   const active       = field.filter(g => g.status !== 'CUT' && g.status !== 'WD');
   const cut          = field.filter(g => g.status === 'CUT' || g.status === 'WD');
-  const cutScore     = active.length >= 50 ? active[49].score
-                     : active.length ? active[active.length-1].score : 999;
+
+  // Cut line: use tournament's cutPos, then fallback to active field size
+  const cutIdx   = Math.min(cutPos - 1, active.length - 1);
+  const cutScore = active.length > cutIdx ? active[cutIdx].score : (active.length ? active[active.length-1].score : 999);
 
   const posColor = pos => {
     if(pos==='1')         return '#9a7a2a';
@@ -388,16 +391,17 @@ function renderLeaderboard(picks, field, st) {
       </tr>`;
     }
 
-    const picked = isPicked(g.name);
-    const isNear = !isComplete && !cutInserted && g.score >= cutScore - 2;
-    const thru   = g.thru === 'F' ? 'F' : g.thru ? 'H'+g.thru : '—';
-    const bg     = isNear ? 'background:#fffaf0' : picked ? 'background:rgba(201,168,76,0.07)' : '';
-    const sc     = g.score < 0 ? 'color:var(--under,#1a5c35)' : g.score > 0 ? 'color:var(--over,#8b2020)' : 'color:var(--t2,#3a3a3a)';
+    const picked  = isPicked(g.name);
+    const isNear  = !isComplete && !cutInserted && g.score >= cutScore - 2 && g.score <= cutScore;
+    const thru    = g.thru === 'F' ? 'F' : g.thru ? 'H'+g.thru : '—';
+    const nearBg  = isNear  ? 'background:#fffbf0;border-left:3px solid #e6a817' : '';
+    const bg      = picked && !isNear ? 'background:rgba(201,168,76,0.07)' : nearBg;
+    const sc      = g.score < 0 ? 'color:var(--under,#1a5c35)' : g.score > 0 ? 'color:var(--over,#8b2020)' : 'color:var(--t2,#3a3a3a)';
 
     bodyRows += `<tr style="${bg}">
       <td style="padding:9px 10px 9px 14px;font-size:12px;font-weight:700;color:${posColor(g.pos)};white-space:nowrap">${g.pos||'—'}</td>
       <td style="padding:9px 6px;font-size:13px;${picked?'font-weight:700':''};max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        ${picked ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold,#c9a84c);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>` : ''}${g.name}
+        ${picked ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold,#c9a84c);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>` : ''}${g.name}${isNear ? ' <span style="font-size:10px;color:#e6a817">⚠</span>' : ''}
       </td>
       ${isComplete ? '' : `<td style="padding:9px 6px;text-align:center;font-size:11px;color:var(--t3,#7a7a6a)">${thru}</td>`}
       <td style="padding:9px 14px 9px 6px;text-align:right;font-family:'Playfair Display',serif;font-size:15px;font-weight:700;${sc}">${fmtScore(g.score)}</td>
