@@ -116,6 +116,7 @@ h1 em { font-style:italic; color:var(--gold); }
 /* ── SCORE CHIPS ── */
 .chip { display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--cream); border:1px solid var(--cream-dk); border-radius:var(--r-md); width:84px; height:58px; flex-shrink:0; }
 .chip.cut { background:#fdf0ee; border-color:#f5c6c0; }
+.chip.at-risk { background:#fffbf0; border-color:#e6a817; border-width:2px; }
 .chip .cn { font-size:9px; font-weight:600; color:var(--t2); text-align:center; width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:2px; line-height:1.2; }
 .chip.cut .cn { text-decoration:line-through; color:var(--t3); }
 .chip .cs { font-family:'Playfair Display',serif; font-size:15px; font-weight:700; line-height:1; }

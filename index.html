@@ -122,8 +122,12 @@ async function loadTournament() {
     const pool  = calcPool(picks, HARDCODED_FINALS[t.id]);
     saveFinal(t.id, pool);
     buildTabs();
-    renderPool(t, st, pool);
-    renderLeaderboard(picks, HARDCODED_FINALS[t.id], st, t);
+    const hField   = HARDCODED_FINALS[t.id];
+    const hActive  = hField.filter(g=>g.status!=='CUT'&&g.status!=='WD');
+    const hCutIdx  = Math.min((t.cutPos||70)-1, hActive.length-1);
+    const hCutScore= hActive[hCutIdx]?.score ?? 999;
+    renderPool(t, st, pool, hCutScore);
+    renderLeaderboard(picks, hField, st, t);
     setFetchBar('📋 Final results · Official data');
     return;
   }
@@ -140,10 +144,12 @@ async function loadTournament() {
     setCache(t.id, rel);
     fetchedAt[t.id] = new Date().toISOString();
 
-    const pool = calcPool(picks, rel);
+    const pool     = calcPool(picks, rel);
     if(st === 'live' || st === 'complete') { saveFinal(t.id, pool); buildTabs(); }
-
-    renderPool(t, st, pool);
+    const fActive  = field.filter(g=>g.status!=='CUT'&&g.status!=='WD');
+    const fCutIdx  = Math.min((t.cutPos||70)-1, fActive.length-1);
+    const fCutScore= fActive[fCutIdx]?.score ?? 999;
+    renderPool(t, st, pool, fCutScore);
     renderLeaderboard(picks, field, st, t);
     const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
     setFetchBar(`Data: <strong>ESPN</strong> · updated ${now}${st==='live'?' · auto-refreshes every 5 min':''}`);
@@ -155,7 +161,10 @@ async function loadTournament() {
       showBanner('warn', `Live feed unavailable — showing cached data from ${timeAgo(cached.fetchedAt)}`);
       const pool = calcPool(getPicks(t.id), cached.scores);
       if(st==='complete'){ saveFinal(t.id,pool); buildTabs(); }
-      renderPool(t, st, pool);
+      const cActive  = cached.scores.filter(g=>g.status!=='CUT'&&g.status!=='WD');
+      const cCutIdx  = Math.min((t.cutPos||70)-1, cActive.length-1);
+      const cCutScore= cActive[cCutIdx]?.score ?? 999;
+      renderPool(t, st, pool, cCutScore);
       renderLeaderboard(getPicks(t.id), cached.scores, st, t);
       setFetchBar(`Data: cached · ${timeAgo(cached.fetchedAt)}`);
     } else {
@@ -213,20 +222,21 @@ function renderUpcoming(t) {
 
 // ── POOL TABLE ────────────────────────────────────────────────────────────────
 
-function renderPool(t, st, pool) {
+function renderPool(t, st, pool, cutScore) {
   if(!pool.length){ document.getElementById('pool-area').innerHTML='<div class="empty">No picks configured. <a href="admin.html" style="color:var(--gold)">Edit picks →</a></div>';return; }
-  const worst = Math.max(...pool.map(r=>r.total));
+  const worst   = Math.max(...pool.map(r=>r.total));
+  const liveRound = st === 'live' && cutScore !== undefined;
   let html=`<div class="pool-scroll"><div class="pool-inner">
     <div class="pool-head"><div>Pos</div><div>Player</div><div>Pick 1</div><div>Pick 2</div><div>Pick 3</div><div>Pick 4</div><div style="text-align:right">Total</div></div>`;
   pool.forEach((r)=>{
     const isLast = r.total === worst;
     const pc = r.pos===1?'p1':r.pos===2?'p2':r.pos===3?'p3':isLast?'pl':'pn';
     const chips=r.golfers.map(g=>{
-      const isCut=g.status==='CUT'||g.status==='WD'||g.status==='notfound';
-      const thru=g.thru==='F'?'F':g.thru?'H'+g.thru:'';
-      const parts=g.name.split(' ');
-      const chipName=parts.length>=2?parts[0]+' '+parts[parts.length-1]:g.name;
-      return `<div class="chip${isCut?' cut':''}"><div class="cn">${chipName}</div><div class="cs ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div><div class="ct">${isCut?'CUT':thru}</div></div>`;
+      const isCut    = g.status==='CUT'||g.status==='WD'||g.status==='notfound';
+      const isAtRisk = !isCut && liveRound && g.score >= cutScore;
+      const thru     = g.thru==='F'?'F':g.thru?'H'+g.thru:'';
+      const chipCls  = isCut ? 'chip cut' : isAtRisk ? 'chip at-risk' : 'chip';
+      return `<div class="${chipCls}"><div class="cn">${g.name.split(' ').slice(0,1).join(' ')} ${g.name.split(' ').slice(-1)[0]}</div><div class="cs ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div><div class="ct">${isCut?'CUT':thru}</div></div>`;
     }).join('');
     html+=`<div class="pool-row${isLast?' is-last':''}">
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div class="pos ${pc}">${r.pos}</div>${isLast?'<div class="punish">🍺🥃</div>':''}</div>
@@ -401,7 +411,7 @@ function renderLeaderboard(picks, field, st, t) {
     bodyRows += `<tr style="${bg}">
       <td style="padding:9px 10px 9px 14px;font-size:12px;font-weight:700;color:${posColor(g.pos)};white-space:nowrap">${g.pos||'—'}</td>
       <td style="padding:9px 6px;font-size:13px;${picked?'font-weight:700':''};max-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-        ${picked ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold,#c9a84c);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>` : ''}${g.name}${isNear ? ' <span style="font-size:10px;color:#e6a817">⚠</span>' : ''}
+        ${picked ? `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--gold,#c9a84c);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>` : ''}${g.name}
       </td>
       ${isComplete ? '' : `<td style="padding:9px 6px;text-align:center;font-size:11px;color:var(--t3,#7a7a6a)">${thru}</td>`}
       <td style="padding:9px 14px 9px 6px;text-align:right;font-family:'Playfair Display',serif;font-size:15px;font-weight:700;${sc}">${fmtScore(g.score)}</td>
