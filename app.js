@@ -290,11 +290,18 @@ function parseESPN(data) {
     const cut    = stType.includes('cut');
     const wd     = stType.includes('wd')||stType.includes('withdraw');
 
-    // thru: find the most recent round (highest period) and count its holes
+    // thru: find most recent round, fall back to 'F' if player between rounds
     const rounds      = c.linescores||[];
     const latestRound = rounds.reduce((best, r) => (!best || r.period > best.period) ? r : best, null);
     const holesPlayed = latestRound?.linescores?.length||0;
-    const thru        = holesPlayed >= 18 ? 'F' : holesPlayed > 0 ? String(holesPlayed) : '';
+    let thru = '';
+    if(holesPlayed >= 18) {
+      thru = 'F';
+    } else if(holesPlayed > 0) {
+      thru = String(holesPlayed);
+    } else if(rounds.some(r => (r.linescores?.length||0) >= 18)) {
+      thru = 'F'; // completed a prior round, not yet started next
+    }
 
     const pos = c.status?.position?.displayName||'';
 
