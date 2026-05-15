@@ -269,54 +269,55 @@ function countdown(startStr){ const diff=new Date(startStr+'T00:00:00')-new Date
 
 function parseESPN(data) {
   const competitors = data?.events?.[0]?.competitions?.[0]?.competitors||[];
+
+  const parseDisp = s => {
+    const str = String(s||'').trim();
+    return (!str||str==='E') ? 0 : parseInt(str.replace('+',''),10)||0;
+  };
+
   return competitors.map(c => {
-    // Live format: c.score is a plain string e.g. "-3", "E", "+2"
-    // Completed format: c.score is an object with .value / .displayValue
-    let score = 0;
-    const raw = c.score;
-    if(typeof raw === 'string') {
-      const s = raw.trim();
-      score = (s===''||s==='E') ? 0 : parseInt(s.replace('+',''),10)||0;
-    } else if(typeof raw === 'number') {
-      score = raw;
-    } else if(raw?.displayValue) {
-      score = raw.displayValue==='E' ? 0 : parseInt(raw.displayValue.replace('+',''),10)||0;
-    } else if(typeof raw?.value === 'number') {
-      score = raw.value;
+    // Filter to actual rounds only — real rounds always have a 'value' property
+    // ESPN also includes a cumulative/aggregate entry without 'value' — skip it
+    const rounds = (c.linescores||[]).filter(r => 'value' in r);
+
+    // Cumulative score = sum of each completed/in-progress round score to par
+    // More reliable than c.score which can be R1-only or change type between rounds
+    let score;
+    if(rounds.length > 0) {
+      score = rounds.reduce((sum, r) => sum + parseDisp(r.displayValue), 0);
+    } else {
+      const raw = c.score;
+      score = typeof raw === 'number' ? raw : parseDisp(String(raw||''));
     }
 
-    // status is null during live rounds
-    const stType = (c.status?.type||'').toLowerCase();
-    const cut    = stType.includes('cut');
-    const wd     = stType.includes('wd')||stType.includes('withdraw');
-
-    // thru: find most recent round, fall back to 'F' if player between rounds
-    const rounds      = c.linescores||[];
-    const latestRound = rounds.reduce((best, r) => (!best || r.period > best.period) ? r : best, null);
+    // Thru: find the latest actual round that has hole-level data
+    const roundsWithHoles = rounds.filter(r => (r.linescores?.length||0) > 0);
+    const latestRound = roundsWithHoles.reduce((best,r) => (!best||r.period>best.period)?r:best, null);
     const holesPlayed = latestRound?.linescores?.length||0;
     let thru = '';
-    if(holesPlayed >= 18) {
-      thru = 'F';
-    } else if(holesPlayed > 0) {
-      thru = String(holesPlayed);
-    } else if(rounds.some(r => (r.linescores?.length||0) >= 18)) {
-      thru = 'F'; // completed a prior round, not yet started next
-    }
+    if(holesPlayed >= 18)        thru = 'F';
+    else if(holesPlayed > 0)     thru = String(holesPlayed);
+    else if(rounds.some(r=>(r.linescores?.length||0)>=18)) thru = 'F'; // between rounds
 
-    const pos = c.status?.position?.displayName||'';
+    const stType = (c.status?.type||'').toLowerCase();
+    const cut = stType.includes('cut');
+    const wd  = stType.includes('wd')||stType.includes('withdraw');
 
-    return { name:c.athlete?.displayName||c.athlete?.fullName||'Unknown', score, thru, pos, status:cut?'CUT':wd?'WD':'active' };
+    return {
+      name:   c.athlete?.displayName||c.athlete?.fullName||'Unknown',
+      score, thru, pos: c.status?.position?.displayName||'',
+      status: cut?'CUT':wd?'WD':'active',
+    };
   }).sort((a,b)=>{
     const ao=a.status!=='active'?1:0, bo=b.status!=='active'?1:0;
-    return ao!==bo ? ao-bo : a.score-b.score;
+    return ao!==bo?ao-bo:a.score-b.score;
   }).map((p,i,arr)=>{
-    // Assign positions from sort order when ESPN doesn't provide them (live rounds)
     if(p.status!=='active'){ p.pos='CUT'; return p; }
-    if(p.pos) return p; // already set by ESPN
-    // Group ties
+    if(p.pos) return p;
     const tied = arr.filter(x=>x.status==='active'&&x.score===p.score);
-    p.pos = tied.length>1 ? 'T'+(arr.filter(x=>x.status==='active'&&x.score<p.score).length+1)
-                          : String(arr.filter(x=>x.status==='active'&&x.score<p.score).length+1);
+    p.pos = tied.length>1
+      ? 'T'+(arr.filter(x=>x.status==='active'&&x.score<p.score).length+1)
+      : String(arr.filter(x=>x.status==='active'&&x.score<p.score).length+1);
     return p;
   });
 }
