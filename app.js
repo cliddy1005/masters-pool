@@ -269,8 +269,15 @@ function countdown(startStr){ const diff=new Date(startStr+'T00:00:00')-new Date
 
 function parseESPN(data) {
   const competitors = data?.events?.[0]?.competitions?.[0]?.competitors||[];
-  // Current tournament round from event-level status
-  const eventPeriod = data?.events?.[0]?.status?.period || 1;
+  // Derive current tournament round from the data itself — find the highest
+  // period number that any competitor has a linescore entry for.
+  // More reliable than event.status.period which ESPN sometimes returns as 1 throughout.
+  let eventPeriod = 1;
+  for(const c of competitors) {
+    for(const r of (c.linescores||[]).filter(r => 'value' in r)) {
+      if(r.period > eventPeriod) eventPeriod = r.period;
+    }
+  }
 
   const parseDisp = s => {
     const str = String(s||'').trim();
