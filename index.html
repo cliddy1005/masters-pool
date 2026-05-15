@@ -233,7 +233,7 @@ function renderPool(t, st, pool, cutScore) {
     const pc = r.pos===1?'p1':r.pos===2?'p2':r.pos===3?'p3':isLast?'pl':'pn';
     const chips=r.golfers.map(g=>{
       const isCut    = g.status==='CUT'||g.status==='WD'||g.status==='notfound';
-      const isAtRisk = !isCut && liveRound && g.score >= cutScore;
+      const isAtRisk = !isCut && liveRound && g.score > cutScore;
       const thru     = g.thru==='F'?'F':g.thru?'H'+g.thru:'';
       const chipCls  = isCut ? 'chip cut' : isAtRisk ? 'chip at-risk' : 'chip';
       return `<div class="${chipCls}"><div class="cn">${g.name.split(' ').slice(0,1).join(' ')} ${g.name.split(' ').slice(-1)[0]}</div><div class="cs ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div><div class="ct">${isCut?'CUT':thru}</div></div>`;

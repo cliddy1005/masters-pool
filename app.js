@@ -269,6 +269,8 @@ function countdown(startStr){ const diff=new Date(startStr+'T00:00:00')-new Date
 
 function parseESPN(data) {
   const competitors = data?.events?.[0]?.competitions?.[0]?.competitors||[];
+  // Current tournament round from event-level status
+  const eventPeriod = data?.events?.[0]?.status?.period || 1;
 
   const parseDisp = s => {
     const str = String(s||'').trim();
@@ -277,11 +279,9 @@ function parseESPN(data) {
 
   return competitors.map(c => {
     // Filter to actual rounds only — real rounds always have a 'value' property
-    // ESPN also includes a cumulative/aggregate entry without 'value' — skip it
     const rounds = (c.linescores||[]).filter(r => 'value' in r);
 
-    // Cumulative score = sum of each completed/in-progress round score to par
-    // More reliable than c.score which can be R1-only or change type between rounds
+    // Cumulative score = sum of each round's score to par
     let score;
     if(rounds.length > 0) {
       score = rounds.reduce((sum, r) => sum + parseDisp(r.displayValue), 0);
@@ -290,14 +290,19 @@ function parseESPN(data) {
       score = typeof raw === 'number' ? raw : parseDisp(String(raw||''));
     }
 
-    // Thru: find the latest actual round that has hole-level data
-    const roundsWithHoles = rounds.filter(r => (r.linescores?.length||0) > 0);
-    const latestRound = roundsWithHoles.reduce((best,r) => (!best||r.period>best.period)?r:best, null);
-    const holesPlayed = latestRound?.linescores?.length||0;
+    // Thru: show progress for the current event round only
+    // If player hasn't started the current round, show nothing (not R1's 'F')
+    const playerMaxPeriod = rounds.reduce((max,r) => r.period>max?r.period:max, 0);
+    const currentRoundData = rounds.find(r => r.period === eventPeriod);
+    const currentHoles = currentRoundData?.linescores?.length || 0;
     let thru = '';
-    if(holesPlayed >= 18)        thru = 'F';
-    else if(holesPlayed > 0)     thru = String(holesPlayed);
-    else if(rounds.some(r=>(r.linescores?.length||0)>=18)) thru = 'F'; // between rounds
+    if(playerMaxPeriod < eventPeriod) {
+      thru = ''; // finished previous round, hasn't teed off in current round yet
+    } else if(currentHoles >= 18) {
+      thru = 'F';
+    } else if(currentHoles > 0) {
+      thru = String(currentHoles);
+    }
 
     const stType = (c.status?.type||'').toLowerCase();
     const cut = stType.includes('cut');
