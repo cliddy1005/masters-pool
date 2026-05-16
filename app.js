@@ -311,9 +311,14 @@ function parseESPN(data) {
       thru = String(currentHoles);
     }
 
-    const stType = (c.status?.type||'').toLowerCase();
-    const cut = stType.includes('cut');
-    const wd  = stType.includes('wd')||stType.includes('withdraw');
+    const stType  = (c.status?.type||'').toLowerCase();
+    const posName = (c.status?.position?.displayName||'').toLowerCase();
+    // ESPN sometimes marks cut via status.type or position.displayName
+    const explicitCut = stType.includes('cut') || posName.includes('cut');
+    const wd          = stType.includes('wd') || stType.includes('withdraw');
+    // Fallback: if tournament is in R3+ and player has no R3+ round data, they missed the cut
+    const inferredCut = !explicitCut && !wd && eventPeriod >= 3 && playerMaxPeriod <= 2;
+    const cut         = explicitCut || inferredCut;
 
     return {
       name:   c.athlete?.displayName||c.athlete?.fullName||'Unknown',
