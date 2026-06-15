@@ -381,6 +381,10 @@ function calcPool(picks, scores) {
       const score=isOut?MISSED_CUT:g.score; total+=score;
       return{name:g.name||name,score,status:g.status||'active',thru:g.thru||''};
     });
+    golfers.sort((a,b)=>{
+      const la=a.name.trim().split(' ').pop(), lb=b.name.trim().split(' ').pop();
+      return la.localeCompare(lb);
+    });
     return{id:p.id,name:p.name,golfers,total};
   });
   // Assign positions by score
