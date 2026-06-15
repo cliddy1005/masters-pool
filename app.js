@@ -6,7 +6,7 @@ const STORE      = 'amt_';
 
 const TOURNAMENTS = [
   { id:'masters',  name:'The Masters',      short:'Masters',   course:'Augusta National',    location:'Augusta, GA',        dates:'Apr 9–12, 2026',  start:'2026-04-09', end:'2026-04-12', feed:null,                                                                                                                           type:'hardcoded', cutPos:50, cutRound:2 },
-  { id:'pga',      name:'PGA Championship', short:'PGA Champ', course:'Aronimink Golf Club',  location:'Newtown Square, PA', dates:'May 14–17, 2026', start:'2026-05-14', end:'2026-05-17', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811947', type:'espn',      cutPos:70, cutRound:2 },
+  { id:'pga',      name:'PGA Championship', short:'PGA Champ', course:'Aronimink Golf Club',  location:'Newtown Square, PA', dates:'May 14–17, 2026', start:'2026-05-14', end:'2026-05-17', feed:null, type:'hardcoded', cutPos:70, cutRound:2 },
   { id:'usopen',   name:'US Open',           short:'US Open',   course:'Shinnecock Hills',     location:'Southampton, NY',    dates:'Jun 18–21, 2026', start:'2026-06-18', end:'2026-06-21', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811952', type:'espn',      cutPos:60, cutRound:2 },
   { id:'theopen',  name:'The Open',          short:'The Open',  course:'Royal Birkdale',       location:'Southport, England', dates:'Jul 16–19, 2026', start:'2026-07-16', end:'2026-07-19', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811957', type:'espn',      cutPos:70, cutRound:2 },
 ];
@@ -41,10 +41,24 @@ const PGA_PICKS = [
   { id:'ciaran',     name:'Ciaran',      picks:['Tommy Fleetwood','Cameron Young','Xander Schauffele','Justin Rose'] },
 ];
 
+const USOPEN_PICKS = [
+  { id:'storm',  name:'Storm',  picks:['Tommy Fleetwood','Cameron Young','Justin Rose','Justin Thomas'] },
+  { id:'rhys',   name:'Rhys',   picks:['Jon Rahm','Justin Thomas','Ludvig Åberg','Justin Rose'] },
+  { id:'mp',     name:'MP',     picks:['Tommy Fleetwood','Ludvig Åberg','Shane Lowry','Jon Rahm'] },
+  { id:'devon',  name:'Devon',  picks:['Cameron Young','Xander Schauffele','Jon Rahm','Matt Fitzpatrick'] },
+  { id:'ciaran', name:'Ciaran', picks:['Xander Schauffele','Tommy Fleetwood','Jon Rahm','Shane Lowry'] },
+  { id:'ddog',   name:'D.Dog',  picks:['Brooks Koepka','Xander Schauffele','Justin Thomas','Cameron Young'] },
+  { id:'rick',   name:'Rick',   picks:['Xander Schauffele','Ludvig Åberg','Jon Rahm','Cameron Young'] },
+  { id:'mattf',  name:'Matt F', picks:['Jon Rahm','Tyrrell Hatton','Cameron Smith','Viktor Hovland'] },
+  { id:'rayne',  name:'Rayne',  picks:['Jordan Spieth','Justin Rose','Collin Morikawa','Tommy Fleetwood'] },
+  { id:'bryan',  name:'Bryan',  picks:['Tommy Fleetwood','Matt Fitzpatrick','Xander Schauffele','Daniel Berger'] },
+  { id:'jarryd', name:'Jarryd', picks:['Jon Rahm','Tommy Fleetwood','Xander Schauffele','Brooks Koepka'] },
+];
+
 const DEFAULT_PICKS = {
   masters: MASTERS_PICKS,
   pga:     PGA_PICKS,
-  usopen:  [], // set via admin when picks are confirmed
+  usopen:  USOPEN_PICKS,
   theopen: [], // set via admin when picks are confirmed
 };
 
@@ -133,7 +147,166 @@ const MASTERS_2026_FINAL = [
   { name:'Davis Riley',               score:0, thru:'', pos:'CUT', status:'CUT' },
 ];
 
-const HARDCODED_FINALS = { masters: MASTERS_2026_FINAL };
+const PGA_2026_FINAL = [
+  { name:'Aaron Rai'                        , score:  -9, thru:'F', pos:'1'   , status:'active' },
+  { name:'Jon Rahm'                         , score:  -6, thru:'F', pos:'T2'  , status:'active' },
+  { name:'Alex Smalley'                     , score:  -6, thru:'F', pos:'T2'  , status:'active' },
+  { name:'Ludvig Åberg'                     , score:  -5, thru:'F', pos:'T4'  , status:'active' },
+  { name:'Justin Thomas'                    , score:  -5, thru:'F', pos:'T4'  , status:'active' },
+  { name:'Matti Schmid'                     , score:  -5, thru:'F', pos:'T4'  , status:'active' },
+  { name:'Cameron Smith'                    , score:  -4, thru:'F', pos:'T7'  , status:'active' },
+  { name:'Xander Schauffele'                , score:  -4, thru:'F', pos:'T7'  , status:'active' },
+  { name:'Rory McIlroy'                     , score:  -4, thru:'F', pos:'T7'  , status:'active' },
+  { name:'Kurt Kitayama'                    , score:  -3, thru:'F', pos:'T10' , status:'active' },
+  { name:'Patrick Reed'                     , score:  -3, thru:'F', pos:'T10' , status:'active' },
+  { name:'Chris Gotterup'                   , score:  -3, thru:'F', pos:'T10' , status:'active' },
+  { name:'Justin Rose'                      , score:  -3, thru:'F', pos:'T10' , status:'active' },
+  { name:'Ben Griffin'                      , score:  -2, thru:'F', pos:'T14' , status:'active' },
+  { name:'Max Greyserman'                   , score:  -2, thru:'F', pos:'T14' , status:'active' },
+  { name:'Scottie Scheffler'                , score:  -2, thru:'F', pos:'T14' , status:'active' },
+  { name:'Matt Fitzpatrick'                 , score:  -2, thru:'F', pos:'T14' , status:'active' },
+  { name:'David Puig'                       , score:  -1, thru:'F', pos:'T18' , status:'active' },
+  { name:'Joaquin Niemann'                  , score:  -1, thru:'F', pos:'T18' , status:'active' },
+  { name:'Stephan Jaeger'                   , score:  -1, thru:'F', pos:'T18' , status:'active' },
+  { name:'Harris English'                   , score:  -1, thru:'F', pos:'T18' , status:'active' },
+  { name:'Min Woo Lee'                      , score:  -1, thru:'F', pos:'T18' , status:'active' },
+  { name:'Padraig Harrington'               , score:  -1, thru:'F', pos:'T18' , status:'active' },
+  { name:'Maverick McNealy'                 , score:  -1, thru:'F', pos:'T18' , status:'active' },
+  { name:'Jordan Spieth'                    , score:  -1, thru:'F', pos:'T18' , status:'active' },
+  { name:'Tom Hoge'                         , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Sam Burns'                        , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Alex Noren'                       , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Bud Cauley'                       , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Daniel Hillier'                   , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Andrew Novak'                     , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Hideki Matsuyama'                 , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Nick Taylor'                      , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Cameron Young'                    , score:   0, thru:'F', pos:'T26' , status:'active' },
+  { name:'Aldrich Potgieter'                , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Patrick Cantlay'                  , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Si Woo Kim'                       , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Ryan Fox'                         , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Ryo Hisatsune'                    , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Martin Kaymer'                    , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Haotong Li'                       , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Daniel Berger'                    , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Christiaan Bezuidenhout'          , score:   1, thru:'F', pos:'T35' , status:'active' },
+  { name:'Denny McCarthy'                   , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Taylor Pendrith'                  , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Nicolai Højgaard'                 , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Jhonattan Vegas'                  , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Kristoffer Reitan'                , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Chris Kirk'                       , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Michael Kim'                      , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Dustin Johnson'                   , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Matt Wallace'                     , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Shane Lowry'                      , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Cooper Blanchett'                 , score:   2, thru:'F', pos:'T44' , status:'active' },
+  { name:'Brooks Koepka'                    , score:   3, thru:'F', pos:'T55' , status:'active' },
+  { name:'Mikael Lindberg'                  , score:   3, thru:'F', pos:'T55' , status:'active' },
+  { name:'Andrew Putnam'                    , score:   3, thru:'F', pos:'T55' , status:'active' },
+  { name:'Corey Conners'                    , score:   3, thru:'F', pos:'T55' , status:'active' },
+  { name:'Collin Morikawa'                  , score:   3, thru:'F', pos:'T55' , status:'active' },
+  { name:'Rico Hoey'                        , score:   4, thru:'F', pos:'T60' , status:'active' },
+  { name:'Brian Harman'                     , score:   4, thru:'F', pos:'T60' , status:'active' },
+  { name:'Sahith Theegala'                  , score:   4, thru:'F', pos:'T60' , status:'active' },
+  { name:'Rickie Fowler'                    , score:   4, thru:'F', pos:'T60' , status:'active' },
+  { name:'Sami Välimäki'                    , score:   4, thru:'F', pos:'T60' , status:'active' },
+  { name:'Keith Mitchell'                   , score:   6, thru:'F', pos:'T65' , status:'active' },
+  { name:'Jason Day'                        , score:   6, thru:'F', pos:'T65' , status:'active' },
+  { name:'Rasmus Højgaard'                  , score:   6, thru:'F', pos:'T65' , status:'active' },
+  { name:'Casey Jarvis'                     , score:   6, thru:'F', pos:'T65' , status:'active' },
+  { name:'Sam Stevens'                      , score:   6, thru:'F', pos:'T65' , status:'active' },
+  { name:'Ryan Gerard'                      , score:   7, thru:'F', pos:'T70' , status:'active' },
+  { name:'William Mouw'                     , score:   7, thru:'F', pos:'T70' , status:'active' },
+  { name:'Kaito Higa'                       , score:   7, thru:'F', pos:'T70' , status:'active' },
+  { name:'John Parry'                       , score:   7, thru:'F', pos:'T70' , status:'active' },
+  { name:'Luke Donald'                      , score:   7, thru:'F', pos:'T70' , status:'active' },
+  { name:'Alex Fitzpatrick'                 , score:   8, thru:'F', pos:'T75' , status:'active' },
+  { name:'Daniel Brown'                     , score:   8, thru:'F', pos:'T75' , status:'active' },
+  { name:'Elvis Smylie'                     , score:   8, thru:'F', pos:'T75' , status:'active' },
+  { name:'Rasmus Neergaard-Petersen'        , score:   8, thru:'F', pos:'T75' , status:'active' },
+  { name:'Johnny Keefer'                    , score:   9, thru:'F', pos:'79'  , status:'active' },
+  { name:'Ben Kern'                         , score:  10, thru:'F', pos:'80'  , status:'active' },
+  { name:'Michael Brennan'                  , score:  11, thru:'F', pos:'81'  , status:'active' },
+  { name:'Brian Campbell'                   , score:  18, thru:'F', pos:'82'  , status:'active' },
+  { name:'Garrick Higgo'                    , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Wyndham Clark'                    , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Thomas Detry'                     , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Kazuki Kaneko'                    , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Michael Block'                    , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Sungjae Im'                       , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Akshay Bhatia'                    , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Jimmy Walker'                     , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'J.T. Poston'                      , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Russell Henley'                   , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Robert MacIntyre'                 , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Tommy Fleetwood'                  , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Andy Sullivan'                    , score:   5, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Gary Woodland'                    , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Tyrrell Hatton'                   , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Max McGreevy'                     , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Takanori Collet'                  , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Brandt Snedeker'                  , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Angel Ayora'                      , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Jackson Gumberg'                  , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'David Lipsky'                     , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Ben Polland'                      , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Stewart Cink'                     , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'J.J. Spaun'                       , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Pierceson Coody'                  , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Viktor Hovland'                   , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Adam Schenk'                      , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Sepp Straka'                      , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Keegan Bradley'                   , score:   6, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Harry Hall'                       , score:   7, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Tom McKibbin'                     , score:   7, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Bryson DeChambeau'                , score:   7, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Ricky Castillo'                   , score:   7, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Patrick Rodgers'                  , score:   7, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Tim Smyth'                        , score:   7, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Austin Smotherman'                , score:   7, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Billy Horschel'                   , score:   8, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Jacob Bridgeman'                  , score:   8, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Joe Highsmith'                    , score:   8, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Steven Fisk'                      , score:   8, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Jason Dufner'                     , score:   8, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Adam Scott'                       , score:   8, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Emiliano Grillo'                  , score:   8, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Bernd Wiesberger'                 , score:   8, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Yang Yong-eun'                    , score:   9, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Lucas Glover'                     , score:   9, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Grant Sapp'                       , score:   9, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Shaun Micheel'                    , score:  10, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Nico Echavarria'                  , score:  10, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Jayden Schaper'                   , score:  10, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Sudarshan Yellamaraju'            , score:  10, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Matt McCarty'                     , score:  11, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Preston McClure'                  , score:  11, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Michael Thorbjornsen'             , score:  11, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Davis Riley'                      , score:  11, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Isaiah Holt'                      , score:  12, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Adrien Saddier'                   , score:  12, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Max Homa'                         , score:  12, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Jordan Smith'                     , score:  12, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Marco Penge'                      , score:  12, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Chris Gabriele'                   , score:  14, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Jonathan Jones'                   , score:  14, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Zach Haynes'                      , score:  14, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Frederic Bide'                    , score:  15, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Ryan Lenahan'                     , score:  15, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Aman Hurt'                        , score:  15, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Tyler Wiseman'                    , score:  15, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Ben Shattuck'                     , score:  16, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Dylan Berg'                       , score:  16, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Reese Vermeer'                    , score:  17, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Max Kartrude'                     , score:  18, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Jackson Droemer'                  , score:  18, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Mitchell Geddes'                  , score:  21, thru:'',  pos:'CUT', status:'CUT'    },
+  { name:'Ben Fisher'                       , score:  22, thru:'',  pos:'CUT', status:'CUT'    },
+];
+
+const HARDCODED_FINALS = { masters: MASTERS_2026_FINAL, pga: PGA_2026_FINAL };
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 
@@ -359,7 +532,7 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
 })();
 
 // Clear stale score caches when match logic changes — bump this version when deploying match fixes
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 (function clearStaleCache(){
   if(retrieve('cache_version') !== CACHE_VERSION) {
     ['masters','pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
@@ -369,11 +542,11 @@ const CACHE_VERSION = 'v4';
 
 // Re-seed Masters final from hardcoded data whenever version changes.
 // Must run after NAME_MAP and calcPool are declared.
-const MASTERS_DATA_VERSION = '2026-v4';
-(function seedMasters(){
-  if(retrieve('masters_data_version') !== MASTERS_DATA_VERSION) {
-    const pool = calcPool(MASTERS_PICKS, MASTERS_2026_FINAL);
-    saveFinal('masters', pool);
-    store('masters_data_version', MASTERS_DATA_VERSION);
+const FINALS_DATA_VERSION = '2026-v5';
+(function seedFinals(){
+  if(retrieve('finals_data_version') !== FINALS_DATA_VERSION) {
+    saveFinal('masters', calcPool(MASTERS_PICKS, MASTERS_2026_FINAL));
+    saveFinal('pga',     calcPool(PGA_PICKS,     PGA_2026_FINAL));
+    store('finals_data_version', FINALS_DATA_VERSION);
   }
 })();
