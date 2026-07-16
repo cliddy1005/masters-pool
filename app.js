@@ -60,7 +60,7 @@ const THEOPEN_PICKS = [
   { id:'ddog',    name:'D.Dog',   picks:['Jon Rahm','Xander Schauffele','Cameron Young','Matt Fitzpatrick'] },
   { id:'storm',   name:'Storm',   picks:['Robert MacIntyre','Matt Fitzpatrick','Tommy Fleetwood','Viktor Hovland'] },
   { id:'rhys',    name:'Rhys',    picks:['Rory McIlroy','Tommy Fleetwood','Tom Kim','Robert MacIntyre'] },
-  { id:'bryan',   name:'Bryan',   picks:['Matt Fitzpatrick','Tommy Fleetwood','Jon Rahm','Collin Morikawa'] },
+  { id:'bryan',   name:'Bryan',   picks:['Alex Fitzpatrick','Tommy Fleetwood','Jon Rahm','Collin Morikawa'] },
   { id:'mp',      name:'MP',      picks:['Rory McIlroy','Ludvig Åberg','Tommy Fleetwood','Jon Rahm'] },
   { id:'rayne',   name:'Rayne',   picks:['Matt Fitzpatrick','Collin Morikawa','Viktor Hovland','Justin Rose'] },
   { id:'ciaran',  name:'Ciaran',  picks:['Viktor Hovland','Tom Kim','Tommy Fleetwood','Matt Fitzpatrick'] },
