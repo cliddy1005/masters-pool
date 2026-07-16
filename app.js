@@ -1,6 +1,7 @@
 // ─── AMA-TING TOUR · APP.JS ───────────────────────────────────────────────────
 
 const MISSED_CUT = 20;
+const CHALK = ['Rory McIlroy','Scottie Scheffler'];
 const ADMIN_PIN  = '1005';
 const STORE      = 'amt_';
 
@@ -543,6 +544,8 @@ function match(a,b){
   return firstA.startsWith(firstB) || firstB.startsWith(firstA);
 }
 
+function isChalk(name){ return CHALK.some(c => match(c, name)); }
+
 // ─── SCORE HELPERS ────────────────────────────────────────────────────────────
 
 function parseScore(s){ if(s===null||s===undefined)return 0;const str=String(s).trim();if(!str||str==='E'||str==='e')return 0;return parseInt(str.replace('+',''),10)||0; }
@@ -552,20 +555,25 @@ function scoreClass(n){ return typeof n!=='number'?'even':n<0?'under':n>0?'over'
 // ─── POOL CALC ────────────────────────────────────────────────────────────────
 
 function calcPool(picks, scores) {
+  // Outright champion: active and sole leader at pos exactly '1'. A 'T1' tie does NOT count.
+  const champ = scores.find(s => s.status==='active' && s.pos==='1');
+  const chalkChamp = champ ? isChalk(champ.name) : false;
   const results = picks.map(p => {
     let total = 0;
     const golfers = p.picks.map(name => {
       const g = scores.find(s => match(s.name, name));
-      if(!g){ total+=MISSED_CUT; return{name,score:MISSED_CUT,status:'notfound',thru:'?'}; }
+      if(!g){ total+=MISSED_CUT; return{name,score:MISSED_CUT,status:'notfound',thru:'?',chalk:isChalk(name)}; }
       const isOut=g.status==='CUT'||g.status==='WD';
       const score=isOut?MISSED_CUT:g.score; total+=score;
-      return{name:g.name||name,score,status:g.status||'active',thru:g.thru||''};
+      return{name:g.name||name,score,status:g.status||'active',thru:g.thru||'',chalk:isChalk(g.name||name)};
     });
     golfers.sort((a,b)=>{
       const la=a.name.trim().split(' ').pop(), lb=b.name.trim().split(' ').pop();
       return la.localeCompare(lb);
     });
-    return{id:p.id,name:p.name,golfers,total};
+    const chalk    = golfers.some(g => g.chalk);
+    const chalkWin = chalkChamp && golfers.some(g => match(g.name, champ.name));
+    return{id:p.id,name:p.name,golfers,total,chalk,chalkWin};
   });
   // Assign positions by score
   results.sort((a,b)=>a.total-b.total);
@@ -716,7 +724,7 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
 })();
 
 // Clear stale score caches when match logic changes — bump this version when deploying match fixes
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 (function clearStaleCache(){
   if(retrieve('cache_version') !== CACHE_VERSION) {
     ['masters','pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
@@ -726,7 +734,7 @@ const CACHE_VERSION = 'v6';
 
 // Re-seed Masters final from hardcoded data whenever version changes.
 // Must run after NAME_MAP and calcPool are declared.
-const FINALS_DATA_VERSION = '2026-v6';
+const FINALS_DATA_VERSION = '2026-v7';
 (function seedFinals(){
   if(retrieve('finals_data_version') !== FINALS_DATA_VERSION) {
     saveFinal('masters', calcPool(MASTERS_PICKS, MASTERS_2026_FINAL));

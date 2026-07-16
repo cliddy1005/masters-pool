@@ -109,6 +109,8 @@ h1 em { font-style:italic; color:var(--gold); }
 .punish { font-size:14px; animation:shake 1.5s ease-in-out infinite; display:inline-block; }
 @keyframes shake { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-2px) rotate(-10deg)} 75%{transform:translateX(2px) rotate(10deg)} }
 .rumbler-label { font-size:10px; color:var(--over); font-weight:700; }
+.chalk-label { font-size:10px; color:var(--gold); font-weight:700; margin-top:2px; }
+.chalk-label.spared { color:var(--under); }
 
 /* ── PLAYER NAME ── */
 .pname { font-family:'Playfair Display',serif; font-size:15px; font-weight:700; color:var(--t1); }
@@ -117,7 +119,9 @@ h1 em { font-style:italic; color:var(--gold); }
 .chip { display:flex; flex-direction:column; align-items:center; justify-content:center; background:var(--cream); border:1px solid var(--cream-dk); border-radius:var(--r-md); width:84px; height:58px; flex-shrink:0; }
 .chip.cut { background:#fdf0ee; border-color:#f5c6c0; }
 .chip.at-risk { background:#fffbf0; border-color:#e6a817; border-width:2px; }
+.chip.chalk { background:#fffbef; border-color:var(--gold); border-width:2px; }
 .chip .cn { font-size:9px; font-weight:600; color:var(--t2); text-align:center; width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-bottom:2px; line-height:1.2; }
+.chip.chalk .cn::before { content:'👑 '; }
 .chip.cut .cn { text-decoration:line-through; color:var(--t3); }
 .chip .cs { font-family:'Playfair Display',serif; font-size:15px; font-weight:700; line-height:1; }
 .cs.under { color:var(--under); } .cs.over { color:var(--over); } .cs.even { color:var(--t2); } .cs.cut-pen { color:var(--cut-red); font-size:13px; }
