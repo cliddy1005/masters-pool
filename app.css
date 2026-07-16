@@ -222,3 +222,64 @@ h1 em { font-style:italic; color:var(--gold); }
   .pool-head,.pool-row { grid-template-columns:40px 130px repeat(4,1fr) 56px; }
   .chip { width:76px; }
 }
+/* ══ POOL ROW 1a — split-deck scorecard ══════════════════════════ */
+
+/* Slim status bar (replaces the old .status-bar markup from renderShell) */
+.sb2 { display:flex; justify-content:space-between; align-items:center; padding:2px 2px 7px; }
+.sb2-left { display:flex; align-items:center; gap:7px; }
+.sb2-pulse { width:7px; height:7px; border-radius:50%; background:#5ec984; animation:sb2pulse 2s infinite; }
+.sb2-pulse.off { background:rgba(245,240,232,.25); animation:none; }
+@keyframes sb2pulse { 0%,100% { box-shadow:0 0 0 0 rgba(94,201,132,.5); } 50% { box-shadow:0 0 0 5px rgba(94,201,132,0); } }
+.sb2-label { font:700 10px 'Source Sans 3',sans-serif; letter-spacing:1.8px; text-transform:uppercase; color:rgba(245,240,232,.75); }
+.sb2-right { display:flex; align-items:center; gap:10px; font:600 10px 'Source Sans 3',sans-serif; letter-spacing:1.2px; text-transform:uppercase; color:rgba(245,240,232,.42); }
+.sb2-ref { background:none; border:1px solid rgba(245,240,232,.2); border-radius:6px; color:rgba(245,240,232,.6); font-size:12px; line-height:1; padding:4px 7px; cursor:pointer; }
+.sb2-ref:hover { border-color:var(--gold); color:var(--gold); }
+.sb2-sub { font:600 9px 'Source Sans 3',sans-serif; letter-spacing:1.4px; text-transform:uppercase; color:rgba(245,240,232,.35); margin-bottom:10px; }
+
+/* Card */
+.pool-card { background:var(--white); border-radius:12px; border-top:3px solid var(--gold); overflow:hidden; box-shadow:0 6px 24px rgba(0,0,0,.35); max-width:640px; margin:0 auto; }
+
+/* Row: [pos column | everything else] */
+.prow { display:grid; grid-template-columns:30px minmax(0,1fr); gap:0 10px; padding:9px 12px 8px; border-bottom:1px solid #eee7da; }
+.prow:last-child { border-bottom:none; }
+.prow.is-lead { background:linear-gradient(90deg, rgba(201,168,76,.15), rgba(201,168,76,0) 65%); }
+.prow.is-last { background:#fdf0ee; }
+.prow-poscol { display:flex; flex-direction:column; align-items:center; gap:3px; padding-top:1px; }
+.pos2 { width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font:800 11.5px 'Source Sans 3',sans-serif; }
+.pos2.p1 { background:var(--gold); color:#1c2f22; }
+.pos2.p2 { background:#dbd6c8; color:#55524a; }
+.pos2.p3 { background:#cd7f32; color:#fff; }
+.pos2.pn { background:#efe9dc; color:#84806e; }
+.pos2.pl { background:var(--over); color:#fff; }
+.prow-punish { font-size:11px; letter-spacing:-2px; }
+
+/* Top deck: name · tags · total */
+.prow-top { display:flex; align-items:baseline; gap:7px; }
+.prow-name { font:700 15px 'Playfair Display',serif; color:#1c2b21; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ptag { font:800 8.5px 'Source Sans 3',sans-serif; letter-spacing:1px; padding:2px 6px; border-radius:4px; white-space:nowrap; }
+.ptag-gold { color:#8a6b1f; background:rgba(201,168,76,.18); }
+.ptag-red { color:var(--over); background:rgba(139,32,32,.12); }
+.prow-total { margin-left:auto; font:900 19px 'Playfair Display',serif; font-variant-numeric:tabular-nums; }
+.prow-total.under { color:var(--under); }
+.prow-total.over { color:var(--over); }
+.prow-total.even { color:#55524a; }
+
+/* Bottom deck: four picks on a fixed grid */
+.prow-picks { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:6px; margin-top:5px; }
+.pk { padding:3px 5px; border-radius:6px; }
+.pk-risk { background:rgba(230,168,23,.16); }
+.pk-n { font:600 11px 'Source Sans 3',sans-serif; color:#4c4a40; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.pk-cut .pk-n { color:#a39a8d; text-decoration:line-through; }
+.pk-line { display:flex; align-items:baseline; gap:4px; }
+.pk-s { font:700 13px 'Playfair Display',serif; }
+.pk-s.under { color:var(--under); }
+.pk-s.over { color:var(--over); }
+.pk-s.even { color:#55524a; }
+.pk-t { font:600 10px 'Source Sans 3',sans-serif; color:#a59d8c; }
+.pk-risk .pk-t { color:#9a6f10; font-weight:700; }
+.pk-t-cut { font:800 8.5px 'Source Sans 3',sans-serif; letter-spacing:1px; color:#b0342c; }
+
+/* Legend under the card */
+.pool-legend { padding:11px 4px 0; font:400 10.5px/1.6 'Source Sans 3',sans-serif; color:rgba(245,240,232,.5); max-width:640px; margin:0 auto; }
+.lg-amber { color:#e6a817; font-weight:700; }
+

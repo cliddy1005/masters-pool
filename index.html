@@ -6,7 +6,7 @@
 <title>Ama Ting-Ting Tour 2026</title>
 <link rel="stylesheet" href="app.css?v=5">
 <style>
-.loading-row { height:64px; background:linear-gradient(90deg,#f0ece4 25%,#faf7f1 50%,#f0ece4 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; margin:1px 0; min-width:640px; }
+.loading-row { height:64px; background:linear-gradient(90deg,#f0ece4 25%,#faf7f1 50%,#f0ece4 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; margin:1px 0; }
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .fetch-bar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:8px 14px; background:rgba(255,255,255,.04); border:1px solid rgba(201,168,76,.12); border-radius:var(--r-md); margin-bottom:14px; font-size:11px; color:rgba(245,240,232,.45); }
 .fetch-bar strong { color:rgba(245,240,232,.7); }
@@ -177,22 +177,19 @@ async function loadTournament() {
 // ── RENDER SHELL ──────────────────────────────────────────────────────────────
 
 function renderShell(t, st) {
-  const live  = st==='live';
-  const label = live ? '🟢 Live — '+t.name : st==='complete' ? t.name+' — Final' : t.name;
+  const live = st==='live';
+  const stLabel = live ? 'Live' : st==='complete' ? 'Final' : 'Upcoming';
   document.getElementById('main-panel').innerHTML = `
-    <div class="status-bar">
-      <div class="status-live"><div class="pulse ${live?'':'off'}"></div><span>${label}</span></div>
-      <div class="status-right">
-        <span class="status-item"><strong>${t.course}</strong></span>
-        <span class="status-item">${t.location} · ${t.dates}</span>
-        ${st!=='upcoming' && t.type!=='hardcoded' ?`<button class="btn btn-ghost btn-sm" id="ref-btn" onclick="manualRefresh()">↻ Refresh</button>`:''}
-      </div>
-    </div>
-    <div id="fetch-bar" class="fetch-bar" style="display:none"></div>
-    <div class="sec-label" id="pool-label">Pool Standings · ${t.name}</div>
-    <div id="pool-area"></div>
-    <div id="cd-area"></div>
-    <div id="leaderboard-area"></div>`;
+  <div class="sb2">
+    <div class="sb2-left"><span class="sb2-pulse${live?'':' off'}"></span><span class="sb2-label">${stLabel} · ${t.short}</span></div>
+    <div class="sb2-right"><span id="sb2-cut"></span>${st!=='upcoming' && t.type!=='hardcoded' ? '<button class="sb2-ref" id="ref-btn" onclick="manualRefresh()" title="Refresh">↻</button>' : ''}</div>
+  </div>
+  <div class="sb2-sub">${t.course} · ${t.location} · ${t.dates}</div>
+  <div id="fetch-bar" class="fetch-bar" style="display:none"></div>
+  <div class="sec-label" id="pool-label"></div>
+  <div id="pool-area"></div>
+  <div id="cd-area"></div>
+  <div id="leaderboard-area"></div>`;
 }
 
 // ── UPCOMING ─────────────────────────────────────────────────────────────────
@@ -223,29 +220,46 @@ function renderUpcoming(t) {
 // ── POOL TABLE ────────────────────────────────────────────────────────────────
 
 function renderPool(t, st, pool, cutScore) {
-  if(!pool.length){ document.getElementById('pool-area').innerHTML='<div class="empty">No picks configured. <a href="admin.html" style="color:var(--gold)">Edit picks →</a></div>';return; }
-  const worst   = Math.max(...pool.map(r=>r.total));
+  if(!pool.length){ document.getElementById('pool-area').innerHTML='<div class="empty">No picks configured. <a href="admin.html" style="color:var(--gold)">Edit picks →</a></div>'; return; }
+  const worst = Math.max(...pool.map(r=>r.total));
   const liveRound = st === 'live' && cutScore !== undefined;
-  let html=`<div class="pool-scroll"><div class="pool-inner">
-    <div class="pool-head"><div>Pos</div><div>Player</div><div>Pick 1</div><div>Pick 2</div><div>Pick 3</div><div>Pick 4</div><div style="text-align:right">Total</div></div>`;
-  pool.forEach((r)=>{
+  const cutEl = document.getElementById('sb2-cut');
+  if(cutEl) cutEl.textContent = liveRound ? 'Proj cut '+fmtScore(cutScore) : '';
+
+  let html = '<div class="pool-card">';
+  pool.forEach(r => {
     const isLast = r.total === worst;
     const pc = r.pos===1?'p1':r.pos===2?'p2':r.pos===3?'p3':isLast?'pl':'pn';
-    const chips=r.golfers.map(g=>{
-      const isCut    = g.status==='CUT'||g.status==='WD'||g.status==='notfound';
+
+    const picks = r.golfers.map(g => {
+      const isCut = g.status==='CUT'||g.status==='WD'||g.status==='notfound';
       const isAtRisk = !isCut && liveRound && g.score > cutScore;
-      const thru     = g.thru==='F'?'F':g.thru?'H'+g.thru:'';
-      const chipCls  = (isCut ? 'chip cut' : isAtRisk ? 'chip at-risk' : 'chip') + (g.glory ? ' glory' : '');
-      return `<div class="${chipCls}"><div class="cn">${g.name.split(' ').slice(0,1).join(' ')} ${g.name.split(' ').slice(-1)[0]}</div><div class="cs ${isCut?'cut-pen':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</div><div class="ct">${isCut?'CUT':thru}</div></div>`;
+      const surname = g.name.trim().split(' ').slice(-1)[0];
+      const thru = isCut ? (g.status==='WD'?'WD':'CUT') : g.thru==='F' ? 'F' : g.thru ? 'H'+g.thru : '';
+      return `<div class="pk${isAtRisk?' pk-risk':''}${isCut?' pk-cut':''}">
+        <div class="pk-n">${g.glory?'👑 ':''}${surname}</div>
+        <div class="pk-line"><span class="pk-s ${isCut?'over':scoreClass(g.score)}">${isCut?'+'+MISSED_CUT:fmtScore(g.score)}</span><span class="pk-t${isCut?' pk-t-cut':''}">${thru}</span></div>
+      </div>`;
     }).join('');
-    html+=`<div class="pool-row${isLast?' is-last':''}">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div class="pos ${pc}">${r.pos}</div>${isLast?'<div class="punish">🍺🥃</div>':''}</div>
-      <div><div class="pname">${r.name}</div>${isLast?'<div class="rumbler-label">Rumbler 🫠</div>':''}${r.gloryWin?'<div class="glory-label spared">👑 Glory hunted · BEER FINES → 0</div>':r.glory?'<div class="glory-label">Glory Hunter 👑 · fines → 0 if he wins</div>':''}</div>
-      ${chips}
-      <div class="total ${scoreClass(r.total)}">${fmtScore(r.total)}</div>
+
+    const tag = r.gloryWin ? '<span class="ptag ptag-gold">👑 FINES → 0</span>'
+              : r.glory    ? '<span class="ptag ptag-gold">👑 GLORY HUNTER</span>' : '';
+
+    html += `<div class="prow${isLast?' is-last':''}${r.pos===1?' is-lead':''}">
+      <div class="prow-poscol"><div class="pos2 ${pc}">${r.pos}</div>${isLast?'<div class="prow-punish">🍺🥃</div>':''}</div>
+      <div>
+        <div class="prow-top">
+          <div class="prow-name">${r.name}</div>
+          ${tag}${isLast?'<span class="ptag ptag-red">RUMBLER 🫠</span>':''}
+          <div class="prow-total ${scoreClass(r.total)}">${fmtScore(r.total)}</div>
+        </div>
+        <div class="prow-picks">${picks}</div>
+      </div>
     </div>`;
   });
-  document.getElementById('pool-area').innerHTML=html+'</div></div>';
+  html += '</div>';
+  html += `<div class="pool-legend">👑 glory hunter — beer fines wiped if his man wins${liveRound?' &nbsp;·&nbsp; <b class="lg-amber">amber</b> = at risk of the cut':''} &nbsp;·&nbsp; last place is the Rumbler 🫠 and drinks 🍺🥃</div>`;
+  document.getElementById('pool-area').innerHTML = html;
 }
 
 // ── SEASON STANDINGS ─────────────────────────────────────────────────────────
