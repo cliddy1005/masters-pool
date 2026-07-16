@@ -601,7 +601,7 @@ function calcSeason() {
     pool.forEach(r => {
       const key = r.name;
       if(!people[key]) people[key] = { name:r.name, results:{}, totalScore:0, majorsPlayed:0, wins:0, rumblers:0 };
-      people[key].results[t.id] = { pos:r.pos, total:r.total };
+      people[key].results[t.id] = { pos:r.pos, total:r.total, rum: r.total===worst };
       people[key].totalScore   += r.total;
       people[key].majorsPlayed += 1;
       if(r.pos===1)       people[key].wins++;
