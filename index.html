@@ -116,7 +116,7 @@ async function loadTournament() {
 
   if(st === 'upcoming') { renderUpcoming(t); return; }
 
-  // ── HARDCODED TOURNAMENTS (Masters) — no fetch, use static data directly ──
+  // ── HARDCODED TOURNAMENTS (Masters, PGA, US Open) — no fetch, static data ──
   if(t.type === 'hardcoded') {
     const picks = getPicks(t.id);
     const pool  = calcPool(picks, HARDCODED_FINALS[t.id]);
