@@ -1,7 +1,10 @@
 // ─── AMA-TING TOUR · APP.JS ───────────────────────────────────────────────────
 
 const MISSED_CUT = 20;
-const CHALK = ['Rory McIlroy','Scottie Scheffler'];
+// Glory Hunters: the tournament favourites that people back purely to chase a
+// result, with no allegiance to the golfer. Picking one carries a beer fine
+// unless that favourite wins outright.
+const GLORY_PICKS = ['Rory McIlroy','Scottie Scheffler'];
 const ADMIN_PIN  = '1005';
 const STORE      = 'amt_';
 
@@ -544,7 +547,7 @@ function match(a,b){
   return firstA.startsWith(firstB) || firstB.startsWith(firstA);
 }
 
-function isChalk(name){ return CHALK.some(c => match(c, name)); }
+function isGloryHunter(name){ return GLORY_PICKS.some(c => match(c, name)); }
 
 // ─── SCORE HELPERS ────────────────────────────────────────────────────────────
 
@@ -557,23 +560,23 @@ function scoreClass(n){ return typeof n!=='number'?'even':n<0?'under':n>0?'over'
 function calcPool(picks, scores) {
   // Outright champion: active and sole leader at pos exactly '1'. A 'T1' tie does NOT count.
   const champ = scores.find(s => s.status==='active' && s.pos==='1');
-  const chalkChamp = champ ? isChalk(champ.name) : false;
+  const gloryChamp = champ ? isGloryHunter(champ.name) : false;
   const results = picks.map(p => {
     let total = 0;
     const golfers = p.picks.map(name => {
       const g = scores.find(s => match(s.name, name));
-      if(!g){ total+=MISSED_CUT; return{name,score:MISSED_CUT,status:'notfound',thru:'?',chalk:isChalk(name)}; }
+      if(!g){ total+=MISSED_CUT; return{name,score:MISSED_CUT,status:'notfound',thru:'?',glory:isGloryHunter(name)}; }
       const isOut=g.status==='CUT'||g.status==='WD';
       const score=isOut?MISSED_CUT:g.score; total+=score;
-      return{name:g.name||name,score,status:g.status||'active',thru:g.thru||'',chalk:isChalk(g.name||name)};
+      return{name:g.name||name,score,status:g.status||'active',thru:g.thru||'',glory:isGloryHunter(g.name||name)};
     });
     golfers.sort((a,b)=>{
       const la=a.name.trim().split(' ').pop(), lb=b.name.trim().split(' ').pop();
       return la.localeCompare(lb);
     });
-    const chalk    = golfers.some(g => g.chalk);
-    const chalkWin = chalkChamp && golfers.some(g => match(g.name, champ.name));
-    return{id:p.id,name:p.name,golfers,total,chalk,chalkWin};
+    const glory    = golfers.some(g => g.glory);
+    const gloryWin = gloryChamp && golfers.some(g => match(g.name, champ.name));
+    return{id:p.id,name:p.name,golfers,total,glory,gloryWin};
   });
   // Assign positions by score
   results.sort((a,b)=>a.total-b.total);
