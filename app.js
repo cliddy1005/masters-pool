@@ -55,11 +55,21 @@ const USOPEN_PICKS = [
   { id:'jarryd', name:'Jarryd', picks:['Jon Rahm','Tommy Fleetwood','Xander Schauffele','Brooks Koepka'] },
 ];
 
+const THEOPEN_PICKS = [
+  { id:'rick',    name:'Rick',    picks:['Matt Fitzpatrick','Collin Morikawa','Ludvig Åberg','Tommy Fleetwood'] },
+  { id:'ddog',    name:'D.Dog',   picks:['Jon Rahm','Xander Schauffele','Cameron Young','Matt Fitzpatrick'] },
+  { id:'storm',   name:'Storm',   picks:['Robert MacIntyre','Matt Fitzpatrick','Tommy Fleetwood','Viktor Hovland'] },
+  { id:'rhys',    name:'Rhys',    picks:['Rory McIlroy','Tommy Fleetwood','Tom Kim','Robert MacIntyre'] },
+  { id:'bryan',   name:'Bryan',   picks:['Matt Fitzpatrick','Tommy Fleetwood','Jon Rahm','Collin Morikawa'] },
+  { id:'michael', name:'Michael', picks:['Rory McIlroy','Ludvig Åberg','Tommy Fleetwood','Jon Rahm'] },
+  { id:'rayne',   name:'Rayne',   picks:['Matt Fitzpatrick','Collin Morikawa','Viktor Hovland','Justin Rose'] },
+];
+
 const DEFAULT_PICKS = {
   masters: MASTERS_PICKS,
   pga:     PGA_PICKS,
   usopen:  USOPEN_PICKS,
-  theopen: [], // set via admin when picks are confirmed
+  theopen: THEOPEN_PICKS,
 };
 
 // ─── MASTERS 2026 FINAL RESULTS (official, hardcoded as permanent fallback) ──
@@ -505,6 +515,10 @@ const NAME_MAP = {
   'shane lowry':'Shane Lowry',
   'keegan bradley':'Keegan Bradley',
   'cameron smith':'Cameron Smith',
+  'viktor hovland':'Viktor Hovland','victor hovland':'Viktor Hovland',
+  'robert macintyre':'Robert MacIntyre','bob macintyre':'Robert MacIntyre',
+  'tom kim':'Tom Kim','joohyung kim':'Tom Kim',
+  'justin thomas':'Justin Thomas','jordan spieth':'Jordan Spieth',
 };
 function norm(s)  { return s.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e').replace(/[òóôõöø]/g,'o').replace(/[ùúûü]/g,'u').replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim(); }
 function canon(s) { return NAME_MAP[norm(s)]||s.trim(); }
@@ -693,9 +707,9 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
 
 // One-time clear of stale picks for non-Masters tournaments
 (function clearStalePicks(){
-  if(!retrieve('picks_cleared_v3')) {
+  if(!retrieve('picks_cleared_v4')) {
     ['pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'picks_'+tid));
-    store('picks_cleared_v3', true);
+    store('picks_cleared_v4', true);
   }
 })();
 
