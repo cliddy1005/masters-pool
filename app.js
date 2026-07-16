@@ -63,6 +63,7 @@ const THEOPEN_PICKS = [
   { id:'bryan',   name:'Bryan',   picks:['Matt Fitzpatrick','Tommy Fleetwood','Jon Rahm','Collin Morikawa'] },
   { id:'mp',      name:'MP',      picks:['Rory McIlroy','Ludvig Åberg','Tommy Fleetwood','Jon Rahm'] },
   { id:'rayne',   name:'Rayne',   picks:['Matt Fitzpatrick','Collin Morikawa','Viktor Hovland','Justin Rose'] },
+  { id:'ciaran',  name:'Ciaran',  picks:['Viktor Hovland','Tom Kim','Tommy Fleetwood','Matt Fitzpatrick'] },
 ];
 
 const DEFAULT_PICKS = {
