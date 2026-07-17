@@ -528,23 +528,46 @@ const NAME_MAP = {
 };
 function norm(s)  { return s.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e').replace(/[òóôõöø]/g,'o').replace(/[ùúûü]/g,'u').replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim(); }
 function canon(s) { return NAME_MAP[norm(s)]||s.trim(); }
-function match(a,b){
-  if(!a||!b) return false;
+
+// Graded match: how confidently do these two names refer to the same golfer?
+//   3 = exact full-name match
+//   2 = both have first + last, surnames equal, first names consistent
+//       (handles "Cam Young"=="Cameron Young", "A. Fitzpatrick"=="Alex Fitzpatrick",
+//        but NOT "Alex Fitzpatrick"=="Matt Fitzpatrick")
+//   1 = surname-only match — one side is a lone surname (e.g. "Fitzpatrick").
+//       Weak: it cannot tell two players who share a surname apart.
+//   0 = no match
+function matchStrength(a,b){
+  if(!a||!b) return 0;
   const ra=canon(a), rb=canon(b);
   const na=norm(ra).replace(/ /g,''), nb=norm(rb).replace(/ /g,'');
-  if(na===nb) return true;
+  if(na===nb) return 3;
   const wa=norm(ra).split(' ').filter(Boolean), wb=norm(rb).split(' ').filter(Boolean);
-  // Single-word on either side: last name only comparison (e.g. pick entered as "Fitzpatrick")
-  if(wa.length===1||wb.length===1){
-    const la=wa[wa.length-1], lb=wb[wb.length-1];
-    return la.length>4 && la===lb;
-  }
-  // Both have first + last name: require last names match AND first names start the same
-  // This handles "Cam Young" == "Cameron Young" but NOT "Alex Fitzpatrick" == "Matt Fitzpatrick"
   const lastA=wa[wa.length-1], lastB=wb[wb.length-1];
-  if(lastA!==lastB) return false;
+  if(lastA!==lastB) return 0;              // surnames must match at minimum
+  if(wa.length===1||wb.length===1){
+    return lastA.length>4 ? 1 : 0;         // surname-only (ambiguous by nature)
+  }
   const firstA=wa[0], firstB=wb[0];
-  return firstA.startsWith(firstB) || firstB.startsWith(firstA);
+  return (firstA.startsWith(firstB) || firstB.startsWith(firstA)) ? 2 : 0;
+}
+function match(a,b){ return matchStrength(a,b) > 0; }
+
+// Resolve a pick to the single best golfer in a field. Prefers the strongest
+// match, so a full "Alex Fitzpatrick" always beats "Matt Fitzpatrick" no matter
+// their order in the list. A weak surname-only match shared by more than one
+// golfer is treated as ambiguous and left unresolved, so we never silently
+// attribute the wrong player's score (e.g. Matt's) to an entrant's pick.
+function resolvePick(name, scores){
+  let best=null, bestRank=0, tiedAtBest=0;
+  for(const s of scores){
+    const r=matchStrength(s.name, name);
+    if(r>bestRank){ bestRank=r; best=s; tiedAtBest=1; }
+    else if(r===bestRank && r>0){ tiedAtBest++; }
+  }
+  if(bestRank===0) return null;
+  if(bestRank===1 && tiedAtBest>1) return null;   // ambiguous bare surname
+  return best;
 }
 
 function isGloryHunter(name){ return GLORY_PICKS.some(c => match(c, name)); }
@@ -564,7 +587,7 @@ function calcPool(picks, scores) {
   const results = picks.map(p => {
     let total = 0;
     const golfers = p.picks.map(name => {
-      const g = scores.find(s => match(s.name, name));
+      const g = resolvePick(name, scores);
       if(!g){ total+=MISSED_CUT; return{name,score:MISSED_CUT,status:'notfound',thru:'?',glory:isGloryHunter(name)}; }
       const isOut=g.status==='CUT'||g.status==='WD';
       const score=isOut?MISSED_CUT:g.score; total+=score;
@@ -727,7 +750,7 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
 })();
 
 // Clear stale score caches when match logic changes — bump this version when deploying match fixes
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 (function clearStaleCache(){
   if(retrieve('cache_version') !== CACHE_VERSION) {
     ['masters','pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
@@ -737,7 +760,7 @@ const CACHE_VERSION = 'v7';
 
 // Re-seed Masters final from hardcoded data whenever version changes.
 // Must run after NAME_MAP and calcPool are declared.
-const FINALS_DATA_VERSION = '2026-v7';
+const FINALS_DATA_VERSION = '2026-v8';
 (function seedFinals(){
   if(retrieve('finals_data_version') !== FINALS_DATA_VERSION) {
     saveFinal('masters', calcPool(MASTERS_PICKS, MASTERS_2026_FINAL));
