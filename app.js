@@ -12,7 +12,7 @@ const TOURNAMENTS = [
   { id:'masters',  name:'The Masters',      short:'Masters',   course:'Augusta National',    location:'Augusta, GA',        dates:'Apr 9–12, 2026',  start:'2026-04-09', end:'2026-04-12', feed:null,                                                                                                                           type:'hardcoded', cutPos:50, cutRound:2 },
   { id:'pga',      name:'PGA Championship', short:'PGA Champ', course:'Aronimink Golf Club',  location:'Newtown Square, PA', dates:'May 14–17, 2026', start:'2026-05-14', end:'2026-05-17', feed:null, type:'hardcoded', cutPos:70, cutRound:2 },
   { id:'usopen',   name:'US Open',           short:'US Open',   course:'Shinnecock Hills',     location:'Southampton, NY',    dates:'Jun 18–21, 2026', start:'2026-06-18', end:'2026-06-21', feed:null, type:'hardcoded', cutPos:60, cutRound:2 },
-  { id:'theopen',  name:'The Open',          short:'The Open',  course:'Royal Birkdale',       location:'Southport, England', dates:'Jul 16–19, 2026', start:'2026-07-16', end:'2026-07-19', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?tournamentId=401811957', type:'espn',      cutPos:70, cutRound:2 },
+  { id:'theopen',  name:'The Open',          short:'The Open',  course:'Royal Birkdale',       location:'Southport, England', dates:'Jul 16–19, 2026', start:'2026-07-16', end:'2026-07-19', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event=401811957', type:'espn',      cutPos:70, cutRound:2 },
 ];
 
 // ─── PICKS PER TOURNAMENT ─────────────────────────────────────────────────────
@@ -658,74 +658,70 @@ function countdown(startStr){ const diff=new Date(startStr+'T00:00:00')-new Date
 
 // ─── FEED PARSERS ─────────────────────────────────────────────────────────────
 
+// Parses ESPN's golf leaderboard endpoint
+// (…/golf/leaderboard?league=<tour>&event=<id>). That feed carries an
+// explicit per-player cut/withdraw signal via status.type.name — unlike the
+// older scoreboard?tournamentId= feed, whose status object is empty between
+// round 2 finishing and round 3 starting, which left missed-cut players
+// showing as active.
 function parseESPN(data) {
   const competitors = data?.events?.[0]?.competitions?.[0]?.competitors||[];
-  // Derive current tournament round from the data itself — find the highest
-  // period number that any competitor has a linescore entry for.
-  // More reliable than event.status.period which ESPN sometimes returns as 1 throughout.
-  let eventPeriod = 1;
-  for(const c of competitors) {
-    for(const r of (c.linescores||[]).filter(r => 'value' in r)) {
-      if(r.period > eventPeriod) eventPeriod = r.period;
-    }
-  }
 
-  const parseDisp = s => {
+  const toPar = s => {
     const str = String(s||'').trim();
-    return (!str||str==='E') ? 0 : parseInt(str.replace('+',''),10)||0;
+    return (!str||str==='E'||str==='-') ? 0 : parseInt(str.replace('+',''),10)||0;
   };
 
-  return competitors.map(c => {
-    // Filter to actual rounds only — real rounds always have a 'value' property
-    const rounds = (c.linescores||[]).filter(r => 'value' in r);
+  const players = competitors.map(c => {
+    const st    = c.status||{};
+    const tname = (st.type?.name||'').toUpperCase();
+    const cut   = tname==='STATUS_CUT';
+    const wd    = tname.includes('WITHDRAW') || tname.includes('STATUS_WD') ||
+                  tname.includes('DISQUALIF') || tname.includes('STATUS_DQ');
 
-    // Cumulative score = sum of each round's score to par
+    // Cumulative score to par. Prefer the leaderboard's score.displayValue
+    // ("-5"/"E"/"+3"); fall back to summing per-round linescores, then to a
+    // bare numeric/string score, so this also works on other ESPN shapes.
     let score;
-    if(rounds.length > 0) {
-      score = rounds.reduce((sum, r) => sum + parseDisp(r.displayValue), 0);
+    const sd = (c.score && typeof c.score==='object') ? c.score.displayValue
+             : (typeof c.score==='string' ? c.score : null);
+    if(sd!=null && String(sd).trim()!=='') {
+      score = toPar(sd);
     } else {
-      const raw = c.score;
-      score = typeof raw === 'number' ? raw : parseDisp(String(raw||''));
+      const rounds = (c.linescores||[]).filter(r => 'value' in r);
+      score = rounds.length ? rounds.reduce((sum,r)=> sum + toPar(r.displayValue), 0)
+            : (typeof c.score==='number' ? c.score : 0);
     }
 
-    // Thru: show progress for the current event round only
-    // If player hasn't started the current round, show nothing (not R1's 'F')
-    const playerMaxPeriod = rounds.reduce((max,r) => r.period>max?r.period:max, 0);
-    const currentRoundData = rounds.find(r => r.period === eventPeriod);
-    const currentHoles = currentRoundData?.linescores?.length || 0;
+    // Thru: progress in the current round only. Not started / scheduled -> ''.
+    const thruN = st.thru||0;
     let thru = '';
-    if(playerMaxPeriod < eventPeriod) {
-      thru = ''; // finished previous round, hasn't teed off in current round yet
-    } else if(currentHoles >= 18) {
-      thru = 'F';
-    } else if(currentHoles > 0) {
-      thru = String(currentHoles);
-    }
-
-    const stType  = (c.status?.type||'').toLowerCase();
-    const posName = (c.status?.position?.displayName||'').toLowerCase();
-    // ESPN sometimes marks cut via status.type or position.displayName
-    const explicitCut = stType.includes('cut') || posName.includes('cut');
-    const wd          = stType.includes('wd') || stType.includes('withdraw');
-    // Fallback: if tournament is in R3+ and player has no R3+ round data, they missed the cut
-    const inferredCut = !explicitCut && !wd && eventPeriod >= 3 && playerMaxPeriod <= 2;
-    const cut         = explicitCut || inferredCut;
+    if(cut || wd)      thru = '';
+    else if(thruN>=18) thru = 'F';
+    else if(thruN>0)   thru = String(thruN);
 
     return {
       name:   c.athlete?.displayName||c.athlete?.fullName||'Unknown',
-      score, thru, pos: c.status?.position?.displayName||'',
-      status: cut?'CUT':wd?'WD':'active',
+      score, thru,
+      pos:    (cut||wd) ? 'CUT' : (st.position?.displayName||''),
+      status: cut ? 'CUT' : wd ? 'WD' : 'active',
     };
-  }).sort((a,b)=>{
+  });
+
+  // Active players first (by score), then cut/withdrawn.
+  players.sort((a,b)=>{
     const ao=a.status!=='active'?1:0, bo=b.status!=='active'?1:0;
-    return ao!==bo?ao-bo:a.score-b.score;
-  }).map((p,i,arr)=>{
+    return ao!==bo ? ao-bo : a.score-b.score;
+  });
+
+  // Position fallback: if ESPN gave no position for an active player, compute a
+  // tie-aware one from the sorted scores.
+  return players.map((p,i,arr)=>{
     if(p.status!=='active'){ p.pos='CUT'; return p; }
     if(p.pos) return p;
-    const tied = arr.filter(x=>x.status==='active'&&x.score===p.score);
-    p.pos = tied.length>1
-      ? 'T'+(arr.filter(x=>x.status==='active'&&x.score<p.score).length+1)
-      : String(arr.filter(x=>x.status==='active'&&x.score<p.score).length+1);
+    const better = arr.filter(x=>x.status==='active' && x.score<p.score).length;
+    const tied   = arr.filter(x=>x.status==='active' && x.score===p.score).length;
+    p.pos = (tied>1?'T':'') + (better+1);
     return p;
   });
 }
@@ -750,7 +746,7 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
 })();
 
 // Clear stale score caches when match logic changes — bump this version when deploying match fixes
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 (function clearStaleCache(){
   if(retrieve('cache_version') !== CACHE_VERSION) {
     ['masters','pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
