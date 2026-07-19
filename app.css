@@ -375,3 +375,12 @@ tr.lb-cutrow td { opacity:.55; }
 .loading-row { height:64px; border-radius:12px; margin:6px 0; background:linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.11) 50%, rgba(255,255,255,.05) 75%); background-size:200% 100%; animation:shimmer2 1.4s infinite; }
 @keyframes shimmer2 { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
 .foot2 { text-align:center; margin-top:26px; }
+
+/* ── COLLUSION: top-two side-deal flag (cosmetic only) ── */
+.collude-pair { position:relative; border-left:3px solid var(--gold); }
+.prow.colluding { position:relative; background:linear-gradient(90deg, rgba(201,168,76,.20), rgba(201,168,76,.03) 70%); }
+.prow.colluding::before { content:''; position:absolute; inset:0; background:rgba(201,168,76,.55); opacity:0; pointer-events:none; animation:collFlash .7s ease-in-out 4; }
+@keyframes collFlash { 0%,100% { opacity:0; } 50% { opacity:.55; } }
+.collude-tag { font:800 8.5px 'Source Sans 3',sans-serif; letter-spacing:1px; padding:2px 6px; border-radius:4px; white-space:nowrap; color:#7a5c12; background:rgba(201,168,76,.28); border:1px solid rgba(201,168,76,.6); animation:collTagPulse 1.4s ease-in-out infinite; }
+@keyframes collTagPulse { 0%,100% { box-shadow:0 0 0 0 rgba(201,168,76,.55); } 50% { box-shadow:0 0 0 4px rgba(201,168,76,0); } }
+.collude-stamp { margin-left:auto; font:800 7.5px 'Source Sans 3',sans-serif; letter-spacing:1px; color:var(--over); border:1.5px solid var(--over); border-radius:3px; padding:2px 5px; transform:rotate(-6deg); opacity:.78; white-space:nowrap; text-align:center; line-height:1.15; }

@@ -175,10 +175,15 @@ function renderPool(t, st, pool, cutScore) {
   const cutEl = document.getElementById('sb2-cut');
   if(cutEl) cutEl.textContent = liveRound ? 'Proj cut '+fmtScore(cutScore) : '';
 
+  // Cosmetic: flag the top two as a suspected side-deal cartel ("check beer fines"),
+  // linked by a brace and each stamped as notified to the committee.
+  const collude = pool.length >= 2;
+
   let html = '<div class="pool-card">';
   pool.forEach(r => {
     const isLast = r.total === worst;
     const pc = r.pos===1?'p1':r.pos===2?'p2':r.pos===3?'p3':isLast?'pl':'pn';
+    const colluding = collude && (r.pos===1 || r.pos===2);
 
     const picks = r.golfers.map(g => {
       const isCut = g.status==='CUT'||g.status==='WD'||g.status==='notfound';
@@ -193,18 +198,22 @@ function renderPool(t, st, pool, cutScore) {
 
     const tag = r.gloryWin ? '<span class="ptag ptag-gold">👑 FINES → 0</span>'
               : r.glory    ? '<span class="ptag ptag-gold">👑 GLORY HUNTER</span>' : '';
+    const colludeTag   = colluding ? '<span class="collude-tag">🤝 COLLUDING · CHECK BEER FINES</span>' : '';
+    const colludeStamp = colluding ? '<span class="collude-stamp">COMMITTEE<br>NOTIFIED</span>' : '';
 
-    html += `<div class="prow${isLast?' is-last':''}${r.pos===1?' is-lead':''}">
+    if(colluding && r.pos===1) html += '<div class="collude-pair">';
+    html += `<div class="prow${colluding?' colluding':''}${isLast?' is-last':''}${r.pos===1?' is-lead':''}">
       <div class="prow-poscol"><div class="pos2 ${pc}">${r.pos}</div>${isLast?'<div class="prow-punish">🍺🥃</div>':''}</div>
       <div>
         <div class="prow-top">
           <div class="prow-name">${r.name}</div>
-          ${tag}${isLast?'<span class="ptag ptag-red">RUMBLER 🫠</span>':''}
+          ${tag}${colludeTag}${isLast?'<span class="ptag ptag-red">RUMBLER 🫠</span>':''}${colludeStamp}
           <div class="prow-total ${scoreClass(r.total)}">${fmtScore(r.total)}</div>
         </div>
         <div class="prow-picks">${picks}</div>
       </div>
     </div>`;
+    if(colluding && r.pos===2) html += '</div>';
   });
   html += '</div>';
   html += `<div class="pool-legend">👑 glory hunter — beer fines wiped if his man wins${liveRound?' &nbsp;·&nbsp; <b class="lg-amber">amber</b> = at risk of the cut':''} &nbsp;·&nbsp; last place is the Rumbler 🫠 and drinks 🍺🥃</div>`;
