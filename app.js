@@ -13,6 +13,7 @@ const TOURNAMENTS = [
   { id:'pga',      name:'PGA Championship', short:'PGA Champ', course:'Aronimink Golf Club',  location:'Newtown Square, PA', dates:'May 14–17, 2026', start:'2026-05-14', end:'2026-05-17', feed:null, type:'hardcoded', cutPos:70, cutRound:2 },
   { id:'usopen',   name:'US Open',           short:'US Open',   course:'Shinnecock Hills',     location:'Southampton, NY',    dates:'Jun 18–21, 2026', start:'2026-06-18', end:'2026-06-21', feed:null, type:'hardcoded', cutPos:60, cutRound:2 },
   { id:'theopen',  name:'The Open',          short:'The Open',  course:'Royal Birkdale',       location:'Southport, England', dates:'Jul 16–19, 2026', start:'2026-07-16', end:'2026-07-19', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event=401811957', type:'espn',      cutPos:70, cutRound:2 },
+  { id:'tourchamp',name:'TOUR Championship', short:'Tour Champ',course:'East Lake Golf Club', location:'Atlanta, GA',         dates:'Aug 27–30, 2026', start:'2026-08-27', end:'2026-08-30', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event=401811964', type:'espn',      cutPos:30, cutRound:null },
 ];
 
 // ─── PICKS PER TOURNAMENT ─────────────────────────────────────────────────────
@@ -71,11 +72,25 @@ const THEOPEN_PICKS = [
   { id:'mattf',   name:'Matt F',  picks:['Ludvig Åberg','Justin Rose','Xander Schauffele','Justin Thomas'] },
 ];
 
+const TOURCHAMP_PICKS = [
+  { id:'storm',   name:'Storm',   picks:['Justin Rose','Viktor Hovland','Tommy Fleetwood','Cameron Young'] },
+  { id:'rhys',    name:'Rhys',    picks:['Matt Fitzpatrick','Cameron Young','Si Woo Kim','Wyndham Clark'] },
+  { id:'ddog',    name:'D.Dog',   picks:['Scottie Scheffler','Cameron Young','Tommy Fleetwood','Chris Gotterup'] },
+  { id:'rick',    name:'Rick',    picks:['Matt Fitzpatrick','Wyndham Clark','Tommy Fleetwood','Ludvig Åberg'] },
+  { id:'mattf',   name:'Matt F',  picks:['Rory McIlroy','Matt Fitzpatrick','Chris Gotterup','Sam Burns'] },
+  { id:'mp',      name:'MP',      picks:['Min Woo Lee','Rory McIlroy','Ludvig Åberg','Scottie Scheffler'] },
+  { id:'jarryd',  name:'Jarryd',  picks:['Scottie Scheffler','Rory McIlroy','Wyndham Clark','Patrick Cantlay'] },
+  { id:'rayne',   name:'Rayne',   picks:['Collin Morikawa','Xander Schauffele','Justin Rose','Viktor Hovland'] },
+  { id:'devon',   name:'Devon',   picks:['Matt Fitzpatrick','Cameron Young','Min Woo Lee','Wyndham Clark'] },
+  { id:'ciaran',  name:'Ciaran',  picks:['Wyndham Clark','Rory McIlroy','Scottie Scheffler','Matt Fitzpatrick'] },
+];
+
 const DEFAULT_PICKS = {
-  masters: MASTERS_PICKS,
-  pga:     PGA_PICKS,
-  usopen:  USOPEN_PICKS,
-  theopen: THEOPEN_PICKS,
+  masters:   MASTERS_PICKS,
+  pga:       PGA_PICKS,
+  usopen:    USOPEN_PICKS,
+  theopen:   THEOPEN_PICKS,
+  tourchamp: TOURCHAMP_PICKS,
 };
 
 // ─── MASTERS 2026 FINAL RESULTS (official, hardcoded as permanent fallback) ──
@@ -749,7 +764,7 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
 const CACHE_VERSION = 'v9';
 (function clearStaleCache(){
   if(retrieve('cache_version') !== CACHE_VERSION) {
-    ['masters','pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
+    ['masters','pga','usopen','theopen','tourchamp'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
     store('cache_version', CACHE_VERSION);
   }
 })();
