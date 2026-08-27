@@ -84,6 +84,7 @@ const TOURCHAMP_PICKS = [
   { id:'devon',   name:'Devon',   picks:['Matt Fitzpatrick','Cameron Young','Min Woo Lee','Wyndham Clark'] },
   { id:'ciaran',  name:'Ciaran',  picks:['Wyndham Clark','Rory McIlroy','Scottie Scheffler','Matt Fitzpatrick'] },
   { id:'darragh', name:'Darragh', picks:['Chris Gotterup','Tom Kim','Cameron Young','Gary Woodland'] },
+  { id:'bryan',   name:'Bryan',   picks:['Xander Schauffele','Wyndham Clark','Ludvig Åberg','Patrick Cantlay'] },
 ];
 
 const DEFAULT_PICKS = {
