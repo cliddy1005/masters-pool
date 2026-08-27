@@ -696,17 +696,18 @@ function parseESPN(data) {
     const wd    = tname.includes('WITHDRAW') || tname.includes('STATUS_WD') ||
                   tname.includes('DISQUALIF') || tname.includes('STATUS_DQ');
 
-    // Cumulative score to par. Prefer the leaderboard's score.displayValue
-    // ("-5"/"E"/"+3"); fall back to summing per-round linescores, then to a
-    // bare numeric/string score, so this also works on other ESPN shapes.
+    // Cumulative score to par. Prefer summing per-round linescores — some
+    // events (e.g. Tour Championship's staggered-strokes format) leave the
+    // leaderboard's top-level score.displayValue stuck at 'E' for every
+    // player, so trust it only when no per-round data is available.
     let score;
-    const sd = (c.score && typeof c.score==='object') ? c.score.displayValue
-             : (typeof c.score==='string' ? c.score : null);
-    if(sd!=null && String(sd).trim()!=='') {
-      score = toPar(sd);
+    const rounds = (c.linescores||[]).filter(r => 'value' in r);
+    if(rounds.length) {
+      score = rounds.reduce((sum,r)=> sum + toPar(r.displayValue), 0);
     } else {
-      const rounds = (c.linescores||[]).filter(r => 'value' in r);
-      score = rounds.length ? rounds.reduce((sum,r)=> sum + toPar(r.displayValue), 0)
+      const sd = (c.score && typeof c.score==='object') ? c.score.displayValue
+               : (typeof c.score==='string' ? c.score : null);
+      score = (sd!=null && String(sd).trim()!=='') ? toPar(sd)
             : (typeof c.score==='number' ? c.score : 0);
     }
 
