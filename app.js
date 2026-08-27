@@ -83,6 +83,7 @@ const TOURCHAMP_PICKS = [
   { id:'rayne',   name:'Rayne',   picks:['Collin Morikawa','Xander Schauffele','Justin Rose','Viktor Hovland'] },
   { id:'devon',   name:'Devon',   picks:['Matt Fitzpatrick','Cameron Young','Min Woo Lee','Wyndham Clark'] },
   { id:'ciaran',  name:'Ciaran',  picks:['Wyndham Clark','Rory McIlroy','Scottie Scheffler','Matt Fitzpatrick'] },
+  { id:'darragh', name:'Darragh', picks:['Chris Gotterup','Tom Kim','Cameron Young','Gary Woodland'] },
 ];
 
 const DEFAULT_PICKS = {
@@ -757,6 +758,14 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
   if(!retrieve('picks_cleared_v4')) {
     ['pga','usopen','theopen'].forEach(tid => localStorage.removeItem(STORE+'picks_'+tid));
     store('picks_cleared_v4', true);
+  }
+})();
+
+// One-time reset of Tour Championship picks so the updated roster (Darragh added) shows for everyone
+(function clearTourchampPicks(){
+  if(!retrieve('picks_cleared_tourchamp_v2')) {
+    localStorage.removeItem(STORE+'picks_tourchamp');
+    store('picks_cleared_tourchamp_v2', true);
   }
 })();
 
