@@ -13,7 +13,8 @@ const TOURNAMENTS = [
   { id:'pga',      name:'PGA Championship', short:'PGA Champ', course:'Aronimink Golf Club',  location:'Newtown Square, PA', dates:'May 14–17, 2026', start:'2026-05-14', end:'2026-05-17', feed:null, type:'hardcoded', cutPos:70, cutRound:2 },
   { id:'usopen',   name:'US Open',           short:'US Open',   course:'Shinnecock Hills',     location:'Southampton, NY',    dates:'Jun 18–21, 2026', start:'2026-06-18', end:'2026-06-21', feed:null, type:'hardcoded', cutPos:60, cutRound:2 },
   { id:'theopen',  name:'The Open',          short:'The Open',  course:'Royal Birkdale',       location:'Southport, England', dates:'Jul 16–19, 2026', start:'2026-07-16', end:'2026-07-19', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event=401811957', type:'espn',      cutPos:70, cutRound:2 },
-  { id:'tourchamp',name:'TOUR Championship', short:'Tour Champ',course:'East Lake Golf Club', location:'Atlanta, GA',         dates:'Aug 27–30, 2026', start:'2026-08-27', end:'2026-08-30', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event=401811964', type:'espn',      cutPos:30, cutRound:null },
+  { id:'tourchamp',name:'TOUR Championship', short:'Tour Champ',course:'East Lake Golf Club', location:'Atlanta, GA',         dates:'Aug 27–30, 2026', start:'2026-08-27', end:'2026-08-30', feed:null, type:'hardcoded', cutPos:30, cutRound:null },
+  { id:'irishopen',name:'Amgen Irish Open',  short:'Irish Open',course:'TBC',                 location:'Ireland',            dates:'Sep 10–13, 2026', start:'2026-09-10', end:'2026-09-13', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=eur&event=401822701', type:'espn',      cutPos:65, cutRound:2 },
 ];
 
 // ─── PICKS PER TOURNAMENT ─────────────────────────────────────────────────────
@@ -87,12 +88,17 @@ const TOURCHAMP_PICKS = [
   { id:'bryan',   name:'Bryan',   picks:['Xander Schauffele','Wyndham Clark','Ludvig Åberg','Patrick Cantlay'] },
 ];
 
+// Irish Open — picks to be entered as they come in (field decided the week of)
+const IRISHOPEN_PICKS = [
+];
+
 const DEFAULT_PICKS = {
   masters:   MASTERS_PICKS,
   pga:       PGA_PICKS,
   usopen:    USOPEN_PICKS,
   theopen:   THEOPEN_PICKS,
   tourchamp: TOURCHAMP_PICKS,
+  irishopen: IRISHOPEN_PICKS,
 };
 
 // ─── MASTERS 2026 FINAL RESULTS (official, hardcoded as permanent fallback) ──
@@ -503,7 +509,41 @@ const USOPEN_2026_FINAL = [
   { name:'Jason Day'                        , score:   7, thru:'',  pos:'WD' , status:'WD'     },
 ];
 
-const HARDCODED_FINALS = { masters: MASTERS_2026_FINAL, pga: PGA_2026_FINAL, usopen: USOPEN_2026_FINAL };
+// ─── TOUR CHAMPIONSHIP 2026 FINAL (locked snapshot · ESPN leaderboard event 401811964) ──
+const TOURCHAMP_2026_FINAL = [
+  { name:"Scottie Scheffler",     score:-16, thru:"F",  pos:"1",    status:"active" },
+  { name:"Viktor Hovland",        score:-13, thru:"F",  pos:"2",    status:"active" },
+  { name:"Ryan Gerard",           score:-12, thru:"F",  pos:"3",    status:"active" },
+  { name:"Rory McIlroy",          score:-11, thru:"F",  pos:"T4",   status:"active" },
+  { name:"Alex Fitzpatrick",      score:-11, thru:"F",  pos:"T4",   status:"active" },
+  { name:"Ludvig Åberg",          score:-11, thru:"F",  pos:"T4",   status:"active" },
+  { name:"Min Woo Lee",           score:-11, thru:"F",  pos:"T4",   status:"active" },
+  { name:"Chris Gotterup",        score:-11, thru:"F",  pos:"T4",   status:"active" },
+  { name:"Jacob Bridgeman",       score:-11, thru:"F",  pos:"T4",   status:"active" },
+  { name:"Russell Henley",        score:-11, thru:"F",  pos:"T4",   status:"active" },
+  { name:"Adam Scott",            score:-10, thru:"F",  pos:"T11",  status:"active" },
+  { name:"Cameron Young",         score:-10, thru:"F",  pos:"T11",  status:"active" },
+  { name:"Tommy Fleetwood",       score:-10, thru:"F",  pos:"T11",  status:"active" },
+  { name:"Xander Schauffele",     score: -9, thru:"F",  pos:"T14",  status:"active" },
+  { name:"Collin Morikawa",       score: -9, thru:"F",  pos:"T14",  status:"active" },
+  { name:"Tom Kim",               score: -9, thru:"F",  pos:"T14",  status:"active" },
+  { name:"Si Woo Kim",            score: -9, thru:"F",  pos:"T14",  status:"active" },
+  { name:"Akshay Bhatia",         score: -7, thru:"F",  pos:"T18",  status:"active" },
+  { name:"Justin Rose",           score: -7, thru:"F",  pos:"T18",  status:"active" },
+  { name:"Sam Burns",             score: -7, thru:"F",  pos:"T18",  status:"active" },
+  { name:"Wyndham Clark",         score: -5, thru:"F",  pos:"T21",  status:"active" },
+  { name:"Hideki Matsuyama",      score: -5, thru:"F",  pos:"T21",  status:"active" },
+  { name:"Patrick Cantlay",       score: -5, thru:"F",  pos:"T21",  status:"active" },
+  { name:"Matt Fitzpatrick",      score: -5, thru:"F",  pos:"T21",  status:"active" },
+  { name:"Kristoffer Reitan",     score: -3, thru:"F",  pos:"25",   status:"active" },
+  { name:"Ryan Fox",              score: -2, thru:"F",  pos:"26",   status:"active" },
+  { name:"Alex Smalley",          score: -1, thru:"F",  pos:"27",   status:"active" },
+  { name:"Robert MacIntyre",      score:  0, thru:"F",  pos:"28",   status:"active" },
+  { name:"Gary Woodland",         score:  2, thru:"F",  pos:"29",   status:"active" },
+  { name:"J.J. Spaun",            score:  4, thru:"",   pos:"CUT",  status:"CUT" },
+];
+
+const HARDCODED_FINALS = { masters: MASTERS_2026_FINAL, pga: PGA_2026_FINAL, usopen: USOPEN_2026_FINAL, tourchamp: TOURCHAMP_2026_FINAL };
 
 // ─── STORAGE ──────────────────────────────────────────────────────────────────
 
@@ -772,22 +812,23 @@ function uniqueGolfers(picks){ const seen=new Set(),list=[];picks.forEach(p=>p.p
 })();
 
 // Clear stale score caches when match logic changes — bump this version when deploying match fixes
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 (function clearStaleCache(){
   if(retrieve('cache_version') !== CACHE_VERSION) {
-    ['masters','pga','usopen','theopen','tourchamp'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
+    ['masters','pga','usopen','theopen','tourchamp','irishopen'].forEach(tid => localStorage.removeItem(STORE+'cache_'+tid));
     store('cache_version', CACHE_VERSION);
   }
 })();
 
 // Re-seed Masters final from hardcoded data whenever version changes.
 // Must run after NAME_MAP and calcPool are declared.
-const FINALS_DATA_VERSION = '2026-v8';
+const FINALS_DATA_VERSION = '2026-v9';
 (function seedFinals(){
   if(retrieve('finals_data_version') !== FINALS_DATA_VERSION) {
-    saveFinal('masters', calcPool(MASTERS_PICKS, MASTERS_2026_FINAL));
-    saveFinal('pga',     calcPool(PGA_PICKS,     PGA_2026_FINAL));
-    saveFinal('usopen',  calcPool(USOPEN_PICKS,  USOPEN_2026_FINAL));
+    saveFinal('masters',   calcPool(MASTERS_PICKS,   MASTERS_2026_FINAL));
+    saveFinal('pga',       calcPool(PGA_PICKS,       PGA_2026_FINAL));
+    saveFinal('usopen',    calcPool(USOPEN_PICKS,    USOPEN_2026_FINAL));
+    saveFinal('tourchamp', calcPool(TOURCHAMP_PICKS, TOURCHAMP_2026_FINAL));
     store('finals_data_version', FINALS_DATA_VERSION);
   }
 })();
