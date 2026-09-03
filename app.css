@@ -385,5 +385,5 @@ tr.lb-cutrow td { opacity:.55; }
 .rules-list li { font:600 12.5px/1.35 'Source Sans 3',sans-serif; color:rgba(245,240,232,.82); }
 
 /* ── Irish Open per-entrant rule-check note ── */
-.pick-warn { display:inline-block; font:700 10px 'Source Sans 3',sans-serif; letter-spacing:.3px; color:#f0b8b0; background:rgba(139,32,32,.30); border:1px solid rgba(139,32,32,.55); border-radius:5px; padding:2px 7px; margin:3px 0 2px; }
-.pick-warn.muted { color:#e6c98a; background:rgba(201,168,76,.15); border-color:rgba(201,168,76,.4); }
+.pick-warn { display:inline-block; font:800 10.5px 'Source Sans 3',sans-serif; letter-spacing:.3px; color:#fff; background:var(--over); border:1px solid #6f1919; border-radius:5px; padding:3px 8px; margin:3px 0 3px; }
+.pick-warn.muted { color:#3a2c07; background:var(--gold); border-color:#a9863a; }
