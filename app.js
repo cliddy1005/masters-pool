@@ -112,7 +112,35 @@ const IRISHOPEN_PICKS = [
   { id:'ddog',    name:'D.Dog',   picks:['Robert MacIntyre','Marco Penge','Matt Wallace','Thorbjørn Olesen'] },
   { id:'devon',   name:'Devon',   picks:['Robert MacIntyre','Shane Lowry','Tyrrell Hatton','Thriston Lawrence'] },
   { id:'ciaran',  name:'Ciaran',  picks:['Shane Lowry','Robert MacIntyre','Tommy Fleetwood','Matt Fitzpatrick'] },
+  { id:'darragh', name:'Darragh', picks:['Robert MacIntyre','Nicolai Højgaard','Daniel Brown','Shane Lowry'] },
 ];
+
+// Golfer nationalities — used to check the Irish Open eligibility rules on the dashboard.
+// Extend as new golfers are picked; an unknown golfer shows as "can't verify".
+const NATIONALITY = {
+  'Shane Lowry':'Ireland', 'Rory McIlroy':'Northern Ireland',
+  'Robert MacIntyre':'Scotland',
+  'Jon Rahm':'Spain', 'Sepp Straka':'Austria', 'Bernd Wiesberger':'Austria',
+  'Jayden Schaper':'South Africa', 'Thriston Lawrence':'South Africa', 'Casey Jarvis':'South Africa',
+  'Alex Fitzpatrick':'England', 'Matt Fitzpatrick':'England', 'Tommy Fleetwood':'England',
+  'Marco Penge':'England', 'Matt Wallace':'England', 'Tyrrell Hatton':'England', 'Daniel Brown':'England',
+  'Nicolai Højgaard':'Denmark', 'Thorbjørn Olesen':'Denmark',
+};
+function golferCountry(name){ return NATIONALITY[canon(name)] || null; }
+
+// Irish Open rule check → { issues:[...], unknown:[...] } (birth-country rule not auto-checked)
+function irishOpenViolations(entry){
+  const picks = (entry.picks||[]).filter(Boolean);
+  const nats  = picks.map(golferCountry);
+  const issues = [];
+  if(picks.some(p => match(p,'Rory McIlroy'))) issues.push('Rory not allowed');
+  if(nats.some(n => n==='USA' || n==='United States')) issues.push('No Americans');
+  const known = nats.filter(Boolean);
+  const dups  = [...new Set(known.filter((c,i)=>known.indexOf(c)!==i))];
+  if(dups.length) issues.push('Two from '+dups.join(' & '));
+  const unknown = picks.filter((p,i)=>!nats[i]);
+  return { issues, unknown };
+}
 
 const DEFAULT_PICKS = {
   masters:   MASTERS_PICKS,

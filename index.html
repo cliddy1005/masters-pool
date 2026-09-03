@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ama Ting-Ting Tour 2026</title>
-<link rel="stylesheet" href="app.css?v=9">
+<link rel="stylesheet" href="app.css?v=11">
 </head>
 <body>
 <div class="wrap">
@@ -17,7 +17,7 @@
 <div id="main-panel"></div>
 <div class="foot2"><a href="admin.html" class="btn btn-ghost btn-sm">⚙️ Edit picks</a></div>
 </div>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 <script>
 let activeId = null;
 let refreshTimer = null;
@@ -153,14 +153,22 @@ function renderUpcoming(t) {
   html += picks.length ? `
   <div class="sec-label">The picks</div>
   <div class="pool-card">
-  ${[...picks].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`
+  ${[...picks].sort((a,b)=>a.name.localeCompare(b.name)).map(p=>{
+    let warn = '';
+    if(t.id==='irishopen' && typeof irishOpenViolations !== 'undefined'){
+      const v = irishOpenViolations(p);
+      if(v.issues.length)       warn = `<div class="pick-warn">⚠️ Breaks rules: ${v.issues.join(' · ')}</div>`;
+      else if(v.unknown.length) warn = `<div class="pick-warn muted">⚠️ Can't verify: ${v.unknown.join(', ')}</div>`;
+    }
+    return `
     <div class="prow">
       <div class="prow-poscol"><div class="pos2 pn">${(p.name||'?').charAt(0)}</div></div>
       <div>
         <div class="prow-top"><div class="prow-name">${p.name}</div></div>
+        ${warn}
         <div class="prow-picks">${[0,1,2,3].map(i=>`<div class="pk"><div class="pk-n">${p.picks[i]||'—'}</div></div>`).join('')}</div>
       </div>
-    </div>`).join('')}
+    </div>`;}).join('')}
   </div>` : `<div class="empty">No picks set yet. <a href="admin.html" style="color:var(--gold)">Edit picks →</a></div>`;
   document.getElementById('pool-area').innerHTML = html;
   function tick(){
