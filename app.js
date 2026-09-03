@@ -17,6 +17,22 @@ const TOURNAMENTS = [
   { id:'irishopen',name:'Amgen Irish Open',  short:'Irish Open',course:'TBC',                 location:'Ireland',            dates:'Sep 10–13, 2026', start:'2026-09-10', end:'2026-09-13', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=eur&event=401822701', type:'espn',      cutPos:65, cutRound:2 },
 ];
 
+// Per-tournament special rules (shown on the tournament's tab while picking)
+const TOURNAMENT_RULES = {
+  irishopen: {
+    deadline: 'Picks in by Wed 9 Sep (afternoon)',
+    items: [
+      '🚫 No Americans',
+      '🌍 All four picks from different countries',
+      '🏠 At least one pick from your country of birth',
+      '⛔ Rory McIlroy is off-limits — too obvious (best in field & from home)',
+      '💸 No beer fines wiped this event',
+      '➕ 20 for a missed cut (normal major rules)',
+      '🏆 Winner takes a positive fine to tour · 🫠 loser is the Rumbler',
+    ],
+  },
+};
+
 // ─── PICKS PER TOURNAMENT ─────────────────────────────────────────────────────
 // Each tournament can have different picks.
 // Admin can override any tournament via admin.html.

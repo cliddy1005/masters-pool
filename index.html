@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ama Ting-Ting Tour 2026</title>
-<link rel="stylesheet" href="app.css?v=6">
+<link rel="stylesheet" href="app.css?v=9">
 </head>
 <body>
 <div class="wrap">
@@ -17,7 +17,7 @@
 <div id="main-panel"></div>
 <div class="foot2"><a href="admin.html" class="btn btn-ghost btn-sm">⚙️ Edit picks</a></div>
 </div>
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 <script>
 let activeId = null;
 let refreshTimer = null;
@@ -143,6 +143,13 @@ function renderUpcoming(t) {
     <div class="cd2-course">${t.course} · ${t.location} · ${t.dates}</div>
     <div class="cd2-digits" id="cd-digits"></div>
   </div>`;
+  const rules = (typeof TOURNAMENT_RULES !== 'undefined') ? TOURNAMENT_RULES[t.id] : null;
+  if(rules){
+    html += `<div class="rules-card">
+      <div class="rules-head"><span class="rules-title">⚠️ Special rules</span>${rules.deadline?`<span class="rules-deadline">⏰ ${rules.deadline}</span>`:''}</div>
+      <ul class="rules-list">${rules.items.map(i=>`<li>${i}</li>`).join('')}</ul>
+    </div>`;
+  }
   html += picks.length ? `
   <div class="sec-label">The picks</div>
   <div class="pool-card">
