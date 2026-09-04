@@ -111,7 +111,7 @@ const IRISHOPEN_PICKS = [
   { id:'storm',   name:'Storm',   picks:['Shane Lowry','Alex Fitzpatrick','Bernd Wiesberger','Casey Jarvis'] },
   { id:'ddog',    name:'D.Dog',   picks:['Robert MacIntyre','Marco Penge','Matt Wallace','Thorbjørn Olesen'] },
   { id:'devon',   name:'Devon',   picks:['Robert MacIntyre','Shane Lowry','Tyrrell Hatton','Thriston Lawrence'] },
-  { id:'ciaran',  name:'Ciaran',  picks:['Shane Lowry','Robert MacIntyre','Tommy Fleetwood','Matt Fitzpatrick'] },
+  { id:'ciaran',  name:'Ciaran',  picks:['Shane Lowry','Robert MacIntyre','Tommy Fleetwood','Jon Rahm'] },
   { id:'darragh', name:'Darragh', picks:['Robert MacIntyre','Nicolai Højgaard','Daniel Brown','Shane Lowry'] },
 ];
 
@@ -128,7 +128,14 @@ const NATIONALITY = {
 };
 function golferCountry(name){ return NATIONALITY[canon(name)] || null; }
 
-// Irish Open rule check → { issues:[...], unknown:[...] } (birth-country rule not auto-checked)
+// Each entrant's country of birth (for the "one pick from your own country" rule), keyed by player id.
+const PLAYER_COUNTRY = {
+  ddog:'England', mp:'Ireland', rayne:'South Africa', rhys:'South Africa',
+  storm:'South Africa', rick:'South Africa', bryan:'South Africa', ciaran:'Ireland',
+  devon:'South Africa', jarryd:'South Africa', darragh:'Ireland', mattf:'South Africa',
+};
+
+// Irish Open rule check → { issues:[...], unknown:[...] }
 function irishOpenViolations(entry){
   const picks = (entry.picks||[]).filter(Boolean);
   const nats  = picks.map(golferCountry);
@@ -139,6 +146,10 @@ function irishOpenViolations(entry){
   const dups  = [...new Set(known.filter((c,i)=>known.indexOf(c)!==i))];
   if(dups.length) issues.push('Two from '+dups.join(' & '));
   const unknown = picks.filter((p,i)=>!nats[i]);
+  // "At least one pick from your country of birth" — only assert when every pick's
+  // nationality is known, so an unverified pick can't cause a false flag.
+  const home = PLAYER_COUNTRY[entry.id];
+  if(home && unknown.length===0 && !nats.includes(home)) issues.push('None from '+home);
   return { issues, unknown };
 }
 
