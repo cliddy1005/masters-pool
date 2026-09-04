@@ -109,7 +109,7 @@ const IRISHOPEN_PICKS = [
   { id:'rhys',    name:'Rhys',    picks:['Shane Lowry','Robert MacIntyre','Jon Rahm','Jayden Schaper'] },
   { id:'rick',    name:'Rick',    picks:['Jon Rahm','Sepp Straka','Robert MacIntyre','Thriston Lawrence'] },
   { id:'storm',   name:'Storm',   picks:['Shane Lowry','Alex Fitzpatrick','Bernd Wiesberger','Casey Jarvis'] },
-  { id:'ddog',    name:'D.Dog',   picks:['Robert MacIntyre','Marco Penge','Matt Wallace','Thorbjørn Olesen'] },
+  { id:'ddog',    name:'D.Dog',   picks:['Robert MacIntyre','Jon Rahm','Matt Wallace','Thorbjørn Olesen'] },
   { id:'devon',   name:'Devon',   picks:['Robert MacIntyre','Shane Lowry','Tyrrell Hatton','Thriston Lawrence'] },
   { id:'ciaran',  name:'Ciaran',  picks:['Shane Lowry','Robert MacIntyre','Tommy Fleetwood','Jon Rahm'] },
   { id:'darragh', name:'Darragh', picks:['Robert MacIntyre','Nicolai Højgaard','Daniel Brown','Shane Lowry'] },
