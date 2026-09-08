@@ -116,6 +116,7 @@ const IRISHOPEN_PICKS = [
   { id:'mp',      name:'MP',      picks:['Shane Lowry','Justin Rose','Robert MacIntyre','Jon Rahm'] },
   { id:'mattf',   name:'Matt F',  picks:['Thriston Lawrence','Alex Fitzpatrick','Jon Rahm','Shane Lowry'] },
   { id:'bryan',   name:'Bryan',   picks:['Casey Jarvis','Jon Rahm','Tyrrell Hatton','Robert MacIntyre'] },
+  { id:'jarryd',  name:'Jarryd',  picks:['Jon Rahm','Shane Lowry','Robert MacIntyre','Thriston Lawrence'] },
 ];
 
 // Golfer nationalities — used to check the Irish Open eligibility rules on the dashboard.
