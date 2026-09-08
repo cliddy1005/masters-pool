@@ -113,6 +113,9 @@ const IRISHOPEN_PICKS = [
   { id:'devon',   name:'Devon',   picks:['Robert MacIntyre','Shane Lowry','Tyrrell Hatton','Thriston Lawrence'] },
   { id:'ciaran',  name:'Ciaran',  picks:['Shane Lowry','Robert MacIntyre','Tommy Fleetwood','Jon Rahm'] },
   { id:'darragh', name:'Darragh', picks:['Robert MacIntyre','Nicolai Højgaard','Daniel Brown','Shane Lowry'] },
+  { id:'mp',      name:'MP',      picks:['Shane Lowry','Justin Rose','Robert MacIntyre','Jon Rahm'] },
+  { id:'mattf',   name:'Matt F',  picks:['Thriston Lawrence','Alex Fitzpatrick','Jon Rahm','Shane Lowry'] },
+  { id:'bryan',   name:'Bryan',   picks:['Casey Jarvis','Jon Rahm','Tyrrell Hatton','Robert MacIntyre'] },
 ];
 
 // Golfer nationalities — used to check the Irish Open eligibility rules on the dashboard.
@@ -122,7 +125,7 @@ const NATIONALITY = {
   'Robert MacIntyre':'Scotland',
   'Jon Rahm':'Spain', 'Sepp Straka':'Austria', 'Bernd Wiesberger':'Austria',
   'Jayden Schaper':'South Africa', 'Thriston Lawrence':'South Africa', 'Casey Jarvis':'South Africa',
-  'Alex Fitzpatrick':'England', 'Matt Fitzpatrick':'England', 'Tommy Fleetwood':'England',
+  'Alex Fitzpatrick':'England', 'Matt Fitzpatrick':'England', 'Tommy Fleetwood':'England', 'Justin Rose':'England',
   'Marco Penge':'England', 'Matt Wallace':'England', 'Tyrrell Hatton':'England', 'Daniel Brown':'England',
   'Nicolai Højgaard':'Denmark', 'Thorbjørn Olesen':'Denmark',
 };
