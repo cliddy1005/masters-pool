@@ -117,6 +117,7 @@ const IRISHOPEN_PICKS = [
   { id:'mattf',   name:'Matt F',  picks:['Thriston Lawrence','Alex Fitzpatrick','Jon Rahm','Shane Lowry'] },
   { id:'bryan',   name:'Bryan',   picks:['Casey Jarvis','Jon Rahm','Tyrrell Hatton','Robert MacIntyre'] },
   { id:'jarryd',  name:'Jarryd',  picks:['Jon Rahm','Shane Lowry','Robert MacIntyre','Thriston Lawrence'] },
+  { id:'rayne',   name:'Rayne',   picks:['Casey Jarvis','K.H. Lee','Alex Fitzpatrick','Shane Lowry'] },
 ];
 
 // Golfer nationalities — used to check the Irish Open eligibility rules on the dashboard.
@@ -129,6 +130,7 @@ const NATIONALITY = {
   'Alex Fitzpatrick':'England', 'Matt Fitzpatrick':'England', 'Tommy Fleetwood':'England', 'Justin Rose':'England',
   'Marco Penge':'England', 'Matt Wallace':'England', 'Tyrrell Hatton':'England', 'Daniel Brown':'England',
   'Nicolai Højgaard':'Denmark', 'Thorbjørn Olesen':'Denmark',
+  'K.H. Lee':'South Korea',
 };
 function golferCountry(name){ return NATIONALITY[canon(name)] || null; }
 
