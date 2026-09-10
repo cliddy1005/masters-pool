@@ -54,9 +54,16 @@ function parse(html){
   const statusM = html.match(/<span class="status">([\s\S]*?)<\/span>/);
   const players = parse(html);
   if(!players.length) throw new Error('no players parsed');
-  const out = { source:'RTÉ', event:'Amgen Irish Open', roundStatus: statusM?decode(statusM[1]):'', updated:new Date().toISOString(), scores: players.map(({flag,...p})=>p) };
+  const roundStatus = statusM?decode(statusM[1]):'';
+  const scores = players.map(({flag,...p})=>p);
+  // Only rewrite when the meaningful data (scores + round status) actually changes,
+  // so a fresh timestamp alone doesn't cause a commit during frozen/quiet periods.
+  let prev=null; try{ prev=JSON.parse(fs.readFileSync(OUT,'utf8')); }catch(e){}
+  const same = prev && prev.roundStatus===roundStatus && JSON.stringify(prev.scores)===JSON.stringify(scores);
+  if(same){ console.error(`no change | status: ${roundStatus} (${players.length} players)`); return; }
+  const out = { source:'RTÉ', event:'Amgen Irish Open', roundStatus, updated:new Date().toISOString(), scores };
   fs.writeFileSync(OUT, JSON.stringify(out,null,0));
-  console.error(`parsed ${players.length} players | status: ${out.roundStatus}`);
+  console.error(`parsed ${players.length} players | status: ${roundStatus}`);
   // quick preview
   players.slice(0,5).forEach(p=>console.error(`  ${p.pos} ${p.name} ${p.score} thru:${p.thru||'-'} ${p.status}`));
 })().catch(e=>{ console.error('ERROR', e.message); process.exit(1); });
