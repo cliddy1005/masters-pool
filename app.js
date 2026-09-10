@@ -14,7 +14,7 @@ const TOURNAMENTS = [
   { id:'usopen',   name:'US Open',           short:'US Open',   course:'Shinnecock Hills',     location:'Southampton, NY',    dates:'Jun 18–21, 2026', start:'2026-06-18', end:'2026-06-21', feed:null, type:'hardcoded', cutPos:60, cutRound:2 },
   { id:'theopen',  name:'The Open',          short:'The Open',  course:'Royal Birkdale',       location:'Southport, England', dates:'Jul 16–19, 2026', start:'2026-07-16', end:'2026-07-19', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=pga&event=401811957', type:'espn',      cutPos:70, cutRound:2 },
   { id:'tourchamp',name:'TOUR Championship', short:'Tour Champ',course:'East Lake Golf Club', location:'Atlanta, GA',         dates:'Aug 27–30, 2026', start:'2026-08-27', end:'2026-08-30', feed:null, type:'hardcoded', cutPos:30, cutRound:null },
-  { id:'irishopen',name:'Amgen Irish Open',  short:'Irish Open',course:'TBC',                 location:'Ireland',            dates:'Sep 10–13, 2026', start:'2026-09-10', end:'2026-09-13', feed:'https://site.api.espn.com/apis/site/v2/sports/golf/leaderboard?league=eur&event=401822701', type:'espn',      cutPos:65, cutRound:2 },
+  { id:'irishopen',name:'Amgen Irish Open',  short:'Irish Open',course:'Trump Intl, Doonbeg', location:'Co. Clare, Ireland',  dates:'Sep 10–13, 2026', start:'2026-09-10', end:'2026-09-13', feed:'irishopen-live.json', type:'json', cutPos:65, cutRound:2 },
 ];
 
 // Per-tournament special rules (shown on the tournament's tab while picking)
@@ -649,6 +649,10 @@ const NAME_MAP = {
   'robert macintyre':'Robert MacIntyre','bob macintyre':'Robert MacIntyre',
   'tom kim':'Tom Kim','joohyung kim':'Tom Kim',
   'justin thomas':'Justin Thomas','jordan spieth':'Jordan Spieth',
+  // Spelling variants used by the RTÉ feed (distinct twins/namesakes — alias, not surname-match)
+  'thorbjoern olesen':'Thorbjørn Olesen','thorbjorn olesen':'Thorbjørn Olesen',
+  'nicolai hoejgaard':'Nicolai Højgaard','nicolai hojgaard':'Nicolai Højgaard',
+  'kh lee':'K.H. Lee','kyounghoon lee':'K.H. Lee','kyoung hoon lee':'K.H. Lee',
 };
 function norm(s)  { return s.toLowerCase().replace(/[àáâãäå]/g,'a').replace(/[èéêë]/g,'e').replace(/[òóôõöø]/g,'o').replace(/[ùúûü]/g,'u').replace(/[^a-z ]/g,'').replace(/\s+/g,' ').trim(); }
 function canon(s) { return NAME_MAP[norm(s)]||s.trim(); }

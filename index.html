@@ -17,7 +17,7 @@
 <div id="main-panel"></div>
 <div class="foot2"><a href="admin.html" class="btn btn-ghost btn-sm">⚙️ Edit picks</a></div>
 </div>
-<script src="app.js?v=15"></script>
+<script src="app.js?v=16"></script>
 <script>
 let activeId = null;
 let refreshTimer = null;
@@ -73,6 +73,32 @@ async function loadTournament() {
     renderPool(t, st, pool, hCutScore);
     renderLeaderboard(picks, hField, st, t);
     setFetchBar('📋 Final results · Official data');
+    return;
+  }
+
+  // Local JSON feed (e.g. Irish Open, refreshed from RTÉ) — same-origin, already in field shape
+  if(t.type === 'json') {
+    document.getElementById('pool-area').innerHTML = skeleton();
+    try {
+      const res = await fetch(t.feed + '?_=' + Date.now());
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const doc = await res.json();
+      const field = doc.scores || [];
+      const picks = getPicks(t.id);
+      const pool = calcPool(picks, field);
+      if(st === 'complete'){ saveFinal(t.id, pool); buildTabs(); }
+      const jActive = field.filter(g=>g.status!=='CUT'&&g.status!=='WD');
+      const jCutIdx = Math.min((t.cutPos||70)-1, jActive.length-1);
+      const jCutScore= jActive[jCutIdx]?.score ?? 999;
+      renderPool(t, st, pool, jCutScore);
+      renderLeaderboard(picks, field, st, t);
+      const upd = doc.updated ? new Date(doc.updated).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+      setFetchBar(`Data: <strong>${doc.source||'RTÉ'}</strong>${doc.roundStatus?' · '+doc.roundStatus:''}${upd?' · updated '+upd:''}${st==='live'?' · refreshes every 5 min':''}`);
+      if(st==='live') refreshTimer = setInterval(() => loadTournament(), 5*60*1000);
+    } catch(err) {
+      showBanner('err', `Could not load scores: ${err.message}`);
+      document.getElementById('pool-area').innerHTML = `<div class="empty">No scores available. <a href="#" onclick="loadTournament();return false" style="color:var(--gold)">Retry →</a></div>`;
+    }
     return;
   }
 
