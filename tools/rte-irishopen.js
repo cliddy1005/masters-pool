@@ -20,9 +20,16 @@ function get(url){
 function decode(s){ return s.replace(/&amp;/g,'&').replace(/&#039;|&#39;|&apos;/g,"'").replace(/&quot;/g,'"').replace(/&aacute;/g,'á').replace(/&oacute;/g,'ó').replace(/&eacute;/g,'é').replace(/&oslash;/g,'ø').replace(/&aring;/g,'å').replace(/&[a-z]+;/g,'').trim(); }
 function toPar(s){ s=(s||'').trim(); if(!s||s==='E'||s==='-'||s==='e') return 0; const n=parseInt(s.replace('+',''),10); return isNaN(n)?0:n; }
 
-function parse(html){
+// RTÉ does not print any "MC"/"CUT" text or a divider row for players who miss
+// the cut — after round 2 they simply stay listed with their two-round totals.
+// So once round 3 has begun we infer the cut: a player who is finished ("F") but
+// has no 3rd/4th-round score has been eliminated. Players with no to-par score at
+// all (blank) are withdrawals/DNS. `cutHappened` gates this so we never misread a
+// merely-finished round-1/2 player as cut.
+function parse(html, cutHappened){
   const rows = [...html.matchAll(/<tr class="row-[^"]*">([\s\S]*?)<\/tr>/g)];
   const cell = (block, cls) => { const m=block.match(new RegExp('<td class="'+cls+'[^"]*">([\\s\\S]*?)</td>')); return m?decode(m[1].replace(/<[^>]+>/g,' ')):''; };
+  const empty = v => { const t=(v||'').trim(); return t===''||t==='-'; };
   const players = rows.map(r=>{
     const b=r[1];
     const nameM=b.match(/<div class="player_name">([\s\S]*?)<\/div>/);
@@ -30,16 +37,20 @@ function parse(html){
     const rawScore=cell(b,'score');
     const rawHole=cell(b,'hole');
     const rawPos=cell(b,'position');
+    const rounds=[...b.matchAll(/<td class="round[^"]*">([\s\S]*?)<\/td>/g)].map(m=>decode(m[1].replace(/<[^>]+>/g,' ')));
+    const r3=rounds[2]||'', r4=rounds[3]||'';
     const flagM=b.match(/<span class="flag ([a-z-]+)"/);
     if(!name) return null;
     const up=rawScore.toUpperCase();
+    const h=rawHole.trim();
     let status='active';
-    if(/\bMC\b|CUT/.test(up)) status='CUT';
-    else if(/WD|RTD|DQ|DSQ/.test(up)) status='WD';
-    const score = (status==='active')? toPar(rawScore) : 0;
+    if(/\bMC\b|CUT/.test(up)) status='CUT';               // explicit marker (rare)
+    else if(/WD|RTD|DQ|DSQ/.test(up)) status='WD';        // explicit marker
+    else if(empty(rawScore)) status='WD';                 // no to-par at all → withdrew/DNS
+    else if(cutHappened && /^F$/i.test(h) && empty(r3) && empty(r4)) status='CUT'; // finished at 36 holes
+    const score = toPar(rawScore); // real to-par; 0 for blank (WD)
     let thru='';
     if(status==='active'){
-      const h=rawHole.trim();
       if(/^F$|^18$/.test(h)) thru='F';
       else if(/^\d+$/.test(h) && +h>0) thru=String(+h);
       else thru='';
@@ -52,9 +63,11 @@ function parse(html){
 (async()=>{
   const html = await get(RTE_URL);
   const statusM = html.match(/<span class="status">([\s\S]*?)<\/span>/);
-  const players = parse(html);
-  if(!players.length) throw new Error('no players parsed');
   const roundStatus = statusM?decode(statusM[1]):'';
+  // The 36-hole cut only applies once round 3 has begun (or later).
+  const cutHappened = /(3rd|4th|third|fourth|final)/i.test(roundStatus);
+  const players = parse(html, cutHappened);
+  if(!players.length) throw new Error('no players parsed');
   const scores = players.map(({flag,...p})=>p);
   // Only rewrite when the meaningful data (scores + round status) actually changes,
   // so a fresh timestamp alone doesn't cause a commit during frozen/quiet periods.
