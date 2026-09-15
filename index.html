@@ -25,7 +25,7 @@
     <div class="tour-cd-unit"><div class="tour-cd-num" id="tour-cd-s">00</div><div class="tour-cd-label">Secs</div></div>
   </div>
   <div class="tour-cd-live">🏌️ We&rsquo;re on tour! 🏌️</div>
-  <div class="tour-cd-foot">Tee-off &middot; <strong>Wednesday 4 November 2026, 3:00pm</strong></div>
+  <div class="tour-cd-foot">First tee &middot; <strong>Thursday 5 November 2026, 12:10pm</strong></div>
 </section>
 <div class="tourn-tabs2" id="tourn-tabs"></div>
 <div id="banner" class="banner"></div>
@@ -423,9 +423,9 @@ if(activeId==='season') renderSeason();
 else loadTournament();
 
 // ── TOUR COUNTDOWN ────────────────────────────────────────────────────────────
-// Ticks down to 4 November 2026, 15:00 local time. Auto-hides once the day passes.
+// Ticks down to first tee: 5 November 2026, 12:10 local. Auto-hides once the day passes.
 (function tourCountdown(){
-  const TARGET = new Date(2026, 10, 4, 15, 0, 0).getTime();   // month is 0-indexed: 10 = Nov
+  const TARGET = new Date(2026, 10, 5, 12, 10, 0).getTime();   // month is 0-indexed: 10 = Nov
   const card = document.getElementById('tour-cd');
   if(!card) return;
   const elD=document.getElementById('tour-cd-d'), elH=document.getElementById('tour-cd-h'),
