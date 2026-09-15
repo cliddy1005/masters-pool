@@ -76,6 +76,30 @@ h1 em { font-style:italic; color:var(--gold); }
 .cd-num { font-family:'Playfair Display',serif; font-size:26px; font-weight:900; color:var(--cream); line-height:1; }
 .cd-label { font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(201,168,76,.5); margin-top:3px; }
 
+/* ── TOUR COUNTDOWN (hero) ── */
+.tour-cd {
+  margin:22px 0 24px;
+  background:linear-gradient(160deg,rgba(201,168,76,.13),rgba(201,168,76,.02) 55%),rgba(0,0,0,.22);
+  border:1px solid rgba(201,168,76,.32); border-radius:var(--r-xl);
+  padding:34px 22px 30px; text-align:center;
+  box-shadow:0 8px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
+  position:relative; overflow:hidden;
+}
+.tour-cd::after { content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse at 50% -20%,rgba(232,201,122,.14),transparent 60%); }
+.tour-cd-eyebrow { font-size:11px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--gold); margin-bottom:6px; position:relative; }
+.tour-cd-title { font-family:'Playfair Display',serif; font-style:italic; font-weight:700; font-size:clamp(20px,4.4vw,30px); color:var(--cream); line-height:1.1; text-wrap:balance; margin-bottom:22px; position:relative; }
+.tour-cd-digits { display:flex; justify-content:center; align-items:stretch; gap:clamp(8px,2.4vw,18px); flex-wrap:wrap; position:relative; }
+.tour-cd-unit { min-width:clamp(64px,18vw,110px); background:rgba(0,0,0,.28); border:1px solid rgba(201,168,76,.18); border-radius:var(--r-lg); padding:16px 10px 12px; }
+.tour-cd-num { font-family:'Playfair Display',serif; font-weight:900; font-size:clamp(40px,11vw,72px); line-height:1; color:var(--gold-lt); font-variant-numeric:tabular-nums; text-shadow:0 2px 20px rgba(201,168,76,.25); }
+.tour-cd-sep { display:flex; align-items:center; font-family:'Playfair Display',serif; font-weight:900; font-size:clamp(26px,7vw,48px); color:rgba(201,168,76,.35); line-height:1; padding-bottom:14px; }
+.tour-cd-label { font-size:10px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(245,240,232,.5); margin-top:8px; }
+.tour-cd-foot { margin-top:22px; font-size:13px; letter-spacing:1px; color:rgba(245,240,232,.6); position:relative; }
+.tour-cd-foot strong { color:var(--gold-lt); font-weight:700; }
+.tour-cd-live { display:none; font-family:'Playfair Display',serif; font-style:italic; font-weight:900; font-size:clamp(26px,6vw,42px); color:var(--gold-lt); position:relative; }
+.tour-cd.is-here .tour-cd-digits, .tour-cd.is-here .tour-cd-foot { display:none; }
+.tour-cd.is-here .tour-cd-live { display:block; }
+@media (max-width:420px){ .tour-cd-sep { display:none; } }
+
 /* ── SECTION LABEL ── */
 .sec-label { font-size:10px; font-weight:700; letter-spacing:3px; text-transform:uppercase; color:rgba(201,168,76,.55); margin-bottom:12px; }
 

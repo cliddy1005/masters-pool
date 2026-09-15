@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ama Ting-Ting Tour 2026</title>
-<link rel="stylesheet" href="app.css?v=12">
+<link rel="stylesheet" href="app.css?v=13">
 </head>
 <body>
 <div class="wrap">
@@ -12,6 +12,21 @@
   <div class="hdr2-brand">Ama Ting-<em>Ting</em> Tour</div>
   <div class="hdr2-yr">Season 2026</div>
 </header>
+<section class="tour-cd" id="tour-cd" aria-label="Countdown to the tour" hidden>
+  <div class="tour-cd-eyebrow">On Tour</div>
+  <div class="tour-cd-title">We go on tour in&hellip;</div>
+  <div class="tour-cd-digits" id="tour-cd-digits">
+    <div class="tour-cd-unit"><div class="tour-cd-num" id="tour-cd-d">00</div><div class="tour-cd-label">Days</div></div>
+    <div class="tour-cd-sep">:</div>
+    <div class="tour-cd-unit"><div class="tour-cd-num" id="tour-cd-h">00</div><div class="tour-cd-label">Hours</div></div>
+    <div class="tour-cd-sep">:</div>
+    <div class="tour-cd-unit"><div class="tour-cd-num" id="tour-cd-m">00</div><div class="tour-cd-label">Mins</div></div>
+    <div class="tour-cd-sep">:</div>
+    <div class="tour-cd-unit"><div class="tour-cd-num" id="tour-cd-s">00</div><div class="tour-cd-label">Secs</div></div>
+  </div>
+  <div class="tour-cd-live">🏌️ We&rsquo;re on tour! 🏌️</div>
+  <div class="tour-cd-foot">Tee-off &middot; <strong>Wednesday 4 November 2026, 3:00pm</strong></div>
+</section>
 <div class="tourn-tabs2" id="tourn-tabs"></div>
 <div id="banner" class="banner"></div>
 <div id="main-panel"></div>
@@ -406,6 +421,31 @@ activeId = hasCompleted ? 'season' :
 buildTabs();
 if(activeId==='season') renderSeason();
 else loadTournament();
+
+// ── TOUR COUNTDOWN ────────────────────────────────────────────────────────────
+// Ticks down to 4 November 2026, 15:00 local time. Auto-hides once the day passes.
+(function tourCountdown(){
+  const TARGET = new Date(2026, 10, 4, 15, 0, 0).getTime();   // month is 0-indexed: 10 = Nov
+  const card = document.getElementById('tour-cd');
+  if(!card) return;
+  const elD=document.getElementById('tour-cd-d'), elH=document.getElementById('tour-cd-h'),
+        elM=document.getElementById('tour-cd-m'), elS=document.getElementById('tour-cd-s');
+  const pad = n => String(n).padStart(2,'0');
+  function tick(){
+    const diff = TARGET - Date.now();
+    // Hide entirely once we're a full day past tee-off, so it never lingers stale.
+    if(diff < -86400000){ card.hidden = true; return; }
+    card.hidden = false;
+    if(diff <= 0){ card.classList.add('is-here'); return; }
+    card.classList.remove('is-here');
+    elD.textContent = Math.floor(diff/86400000);
+    elH.textContent = pad(Math.floor((diff%86400000)/3600000));
+    elM.textContent = pad(Math.floor((diff%3600000)/60000));
+    elS.textContent = pad(Math.floor((diff%60000)/1000));
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
 </script>
 </body>
 </html>
